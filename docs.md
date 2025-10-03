@@ -88,6 +88,16 @@ Lambda Scheduler   S3 Results   CloudWatch Monitoring
   - Dynamic elements (appear after load)
   - Lazy-loaded elements (triggered by scrolling)
 
+- **Smart Content Filtering** (NEW):
+  - Automatically excludes navigation, footer, and share/social buttons
+  - Filters before limiting to 20 elements for better content coverage
+  - Configurable with `--include-header` flag
+
+- **Validated Selector Generation** (NEW):
+  - Generates reliable CSS selectors that work with `querySelector`
+  - Uses class-based selectors and `nth-of-type` instead of unreliable `nth-child`
+  - Validates selectors before returning to avoid "not found" errors
+
 - **INP Potential Scoring**: Prioritizes elements likely to cause performance issues
 - **Smart Filtering**: Avoids disabled, hidden, or non-meaningful elements
 - **Complex Element Detection**: Targets dropdowns, accordions, modals, carousels

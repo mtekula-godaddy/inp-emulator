@@ -25,6 +25,9 @@ The system consists of three main components:
 ### Key Components
 
 - **Element Discovery Engine** - Intelligently finds interactive elements during page rendering (buttons, links, dropdowns, carousels, tabs, form elements)
+  - **Smart Filtering**: Automatically excludes navigation, footer, and share/social buttons
+  - **Validated Selectors**: Generates reliable CSS selectors that work with querySelector
+  - **Priority Scoring**: Ranks elements by INP potential for targeted testing
 - **User Interaction Engine** - Emulates realistic user behavior with mobile touch events and desktop mouse interactions
 - **Performance Analyzer** - Measures and correlates INP with specific elements
 - **Outcome Detection** - Advanced detection of visual changes including:
@@ -100,18 +103,22 @@ inputer \
 
 ```bash
 # Element scan mode - Tests all discovered elements systematically
-inputer-test https://example.com element_scan priority
+# Default: Tests 2 elements per page, excludes nav/footer/share buttons
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority
 
-# Mock mode - Uses AI-like strategy without LLM calls
-inputer-test https://example.com mock priority
+# Test more elements (e.g., 5)
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority 5
 
-# Deterministic mode - Uses predefined action sequence
-inputer-test https://example.com deterministic
+# Include header/nav elements (default: excluded)
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority --include-header
+
+# Test multiple URLs from a file
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py urls.txt element_scan priority
 
 # Different strategies
-inputer-test https://example.com mock sequential   # Test in order
-inputer-test https://example.com mock random       # Random selection
-inputer-test https://example.com mock problematic  # Target known problem elements
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan sequential   # Test in order
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan random       # Random selection
+PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan problematic  # Target known problem elements
 ```
 
 #### AWS Bedrock Mode (Production)
@@ -375,6 +382,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🎯 Key Features Summary
 
 ✅ **Intelligent Element Discovery** - Finds 16+ types of interactive elements during page rendering
+✅ **Smart Content Filtering** - Automatically excludes nav/footer/share buttons, focuses on content interactions
+✅ **Validated Selectors** - Generates reliable CSS selectors using class-based and nth-of-type patterns
 ✅ **Mobile Emulation** - Pixel 5 device emulation with touch events (tap vs click)
 ✅ **Advanced Outcome Detection** - 11 detection methods including CSS visibility, text appearance, DOM mutations
 ✅ **Network Throttling** - Fast 4G, Slow 4G, Fast 3G simulation for realistic testing

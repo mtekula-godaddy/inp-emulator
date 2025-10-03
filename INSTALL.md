@@ -123,11 +123,17 @@ mkdir -p data/results data/screenshots data/traces logs
 ### Test Without LLM (Fastest)
 
 ```bash
-# Test mode - no LLM required
-inputer -u https://httpbin.org/html --test-mode mock --max-interactions 3
+# Element scan mode - Tests discovered elements (default: 2 per page, excludes nav/footer/share)
+PYTHONPATH=src python3 src/inputer/testing/test_runner.py https://httpbin.org/html element_scan priority
 
-# Element scan mode
-inputer -u https://httpbin.org/html --test-mode element_scan --max-interactions 2
+# Test more elements
+PYTHONPATH=src python3 src/inputer/testing/test_runner.py https://httpbin.org/html element_scan priority 5
+
+# Include header/nav elements (default: excluded)
+PYTHONPATH=src python3 src/inputer/testing/test_runner.py https://httpbin.org/html element_scan priority --include-header
+
+# Test multiple URLs from a file
+PYTHONPATH=src python3 src/inputer/testing/test_runner.py urls.txt element_scan priority
 ```
 
 ### Test With LLM
