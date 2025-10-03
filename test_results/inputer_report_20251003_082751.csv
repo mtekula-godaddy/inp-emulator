@@ -1,0 +1,31 @@
+url,interaction_num,timestamp,action_type,selector,element_text,action_text,execution_time,success,measured_inp,inp_coefficient,estimated_inp,inp_classification,outlier_flag,cls_score,cls_classification,js_blocking,overall_score
+https://www.godaddy.com/pricing,1,1759494201.732607,click,#domain-search-box-button,Type the domain you want,,,True,59.6,10.09,601.4,poor,🚨,0,unknown,high,75.5
+https://www.godaddy.com/pricing,2,1759494206.4737332,click,"[data-cy=""filter-button""]",Categories,,,True,76.6,10.09,772.9,poor,🚨,0,unknown,high,75.5
+https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=techoverfly.com,1,1759494225.326907,click,#domain-search-box-button,Search for techoverfly.com,,,False,368,15.53,5715.0,poor,🚨,0,unknown,high,58.2
+https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=techoverfly.com,2,1759494232.980015,click,"[data-cy=""favorites-filled-false""]",Add techoverfly.com to favorites,,,False,194.5,15.53,3020.6,poor,🚨,0,unknown,high,58.2
+https://www.godaddy.com/hosting/web-hosting,1,1759494246.317305,click,#id-50170cd4-f828-4779-bfac-26781e4ccfca,Open tooltip,,,False,75.5,15.51,1171.0,poor,🚨,0,unknown,high,74.8
+https://www.godaddy.com/hosting/web-hosting,2,1759494254.024959,click,#id-ffba4847-9509-4fbb-98f5-5470829a77f9,Open tooltip,,,False,77.8,15.51,1206.7,poor,🚨,0,unknown,high,75.5
+https://www.godaddy.com/airoallaccess,1,1759494265.692461,click,#\35 d570c3f-b138-4e89-8d68-37d4527b26f4,Get Airo™ All Access,,,True,50.7,16.34,828.4,poor,🚨,0,unknown,high,76.1
+https://www.godaddy.com/airoallaccess,2,1759494271.795776,click,#bf7afcd7-08de-49f9-bcbe-708a32a55736,Buy Now,,,True,50.8,16.34,830.1,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/resources,1,1759494289.402972,click,button.carousel__button.carousel__button--prev.swiper-button-disabled,Previous slide,,,False,,,,unknown,,0,unknown,high,65.0
+https://www.godaddy.com/resources,2,1759494294.3219578,click,button.carousel__button.carousel__button--next,Next slide,,,True,53.5,15.77,843.7,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/resources/skills/how-to-use-a-custom-domain-name-for-email,1,1759494307.9655418,click,button.disclosure__button,In this article,,,False,63.7,8.19,521.7,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/resources/skills/how-to-use-a-custom-domain-name-for-email,2,1759494313.4343948,click,#currentMarket,United States - English,,,True,58.9,8.19,482.4,needs_improvement,⚠️,0,unknown,high,76.8
+https://www.godaddy.com/hosting-solutions,1,1759494326.488641,click,#id-50170cd4-f828-4779-bfac-26781e4ccfca,Open tooltip,,,False,74.3,15.81,1174.7,poor,🚨,0,unknown,high,75.5
+https://www.godaddy.com/hosting-solutions,2,1759494333.818455,click,#id-ec4c22ee-d169-46da-8a8f-dc90803fe6d0,Open tooltip,,,False,60.1,15.81,950.2,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/resources/skills/small-business-ideas,1,1759494347.8381262,click,button.disclosure__button,In this article,,,False,49.8,15.99,796.3,poor,🚨,0,unknown,high,76.1
+https://www.godaddy.com/resources/skills/small-business-ideas,2,1759494355.752488,click,#currentMarket,United States - English,,,False,54.2,15.99,866.7,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/resources/skills/10-tips-for-choosing-the-perfect-domain-name,1,1759494367.9086258,click,button.disclosure__button,In this article,,,True,74.9,8.19,613.4,poor,🚨,0,unknown,high,77.1
+https://www.godaddy.com/resources/skills/10-tips-for-choosing-the-perfect-domain-name,2,1759494373.240118,click,button.btn.btn-primary.btn-lg,SEARCH,,,False,,,,unknown,,0,unknown,high,65.0
+https://www.godaddy.com/online-marketing/digital-marketing-services,1,1759494383.772776,click,#\39 1be3c7c-4479-45d3-8621-bae2eca3deb4-play-button,Play button,,,True,61.4,18.09,1110.7,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/online-marketing/digital-marketing-services,2,1759494389.308792,click,#icon-4df8d87c-9931-444c-92d5-5aaceca2ae81,search_form,,,False,,,,unknown,,0,unknown,high,65.0
+https://www.godaddy.com/tlds/com-domain,1,1759494399.590592,click,#domain-search-box-button,Search,,,True,55.8,16.09,897.8,poor,🚨,0,unknown,high,76.8
+https://www.godaddy.com/tlds/com-domain,2,1759494404.409179,click,"[data-cy=""disclaimer-trigger""]",* Disclaimers,,,True,55.5,16.09,893.0,poor,🚨,0,unknown,high,76.1
+https://www.godaddy.com/studio,1,1759494417.683496,click,"[data-cy=""tab""]",Social media,,,False,47.8,16.39,783.4,poor,🚨,0,unknown,high,76.1
+https://www.godaddy.com/studio,2,1759494422.529033,click,#id-9b337d35-d546-4bb0-90ef-7d44311f24db > section > div:nth-of-type(2) > button:nth-of-type(2),Logos,,,True,49,16.39,803.1,poor,🚨,0,unknown,high,76.1
+https://www.godaddy.com/domain-value-appraisal,1,1759494434.892956,click,#f75794d4-0e39-4d87-b06b-e88b6fa1f084,Add to Cart,,,False,,,,unknown,,0,unknown,high,65.0
+https://www.godaddy.com/domain-value-appraisal,2,1759494440.8712971,click,#\36 3101a5c-f7e4-4d78-838a-18a2a3ab9c6e,Add to Cart,,,False,,,,unknown,,0,unknown,high,65.0
+https://www.godaddy.com/online-marketing/digital-marketing,1,1759494452.6506429,click,#\35 c4b54e8-97c6-4f6a-8fe6-fa17b8e19101,Start for Free*,,,False,,,,unknown,,0,unknown,high,65.0
+https://www.godaddy.com/online-marketing/digital-marketing,2,1759494457.0121012,click,#\35 67c779a-7113-43f8-8066-04d0bf9d69a6,Hire an Expert,,,True,54.4,17.49,951.5,poor,🚨,0,unknown,high,76.1
+https://www.godaddy.com/online-marketing/seo-services,1,1759494467.152119,click,#\35 d58d15b-4175-4cb7-a4d0-3a4a540f62b9,Request a Call,,,True,60.9,15.31,932.4,poor,🚨,0,unknown,high,77.4
+https://www.godaddy.com/online-marketing/seo-services,2,1759494471.520395,click,#a5d6c31b-409b-471f-8219-b381efeea9e1,Request a Call,,,True,73.3,15.31,1122.2,poor,🚨,0,unknown,high,75.5

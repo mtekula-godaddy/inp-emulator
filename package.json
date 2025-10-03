@@ -1,0 +1,27 @@
+{
+  "name": "inputer-performance-monitor",
+  "version": "1.0.0",
+  "description": "Automated INP and performance monitoring using Chrome DevTools MCP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Node.js components are optional for Python-based operation\"",
+    "lint": "echo \"Python linting handled by ruff/black in pyproject.toml\"",
+    "format": "echo \"Python formatting handled by black in pyproject.toml\""
+  },
+  "dependencies": {
+    "web-vitals": "^5.1.0"
+  },
+  "keywords": [
+    "performance",
+    "inp",
+    "chrome-devtools",
+    "automation",
+    "testing"
+  ],
+  "author": "Inputer Performance Monitor",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
