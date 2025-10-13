@@ -594,21 +594,118 @@ class ElementDiscoveryEngine:
                     )
                 filtered_elements = nav_footer_filtered
 
+            # Deduplicate by element type - keep one representative of each type
+            deduplicated_elements = self._deduplicate_by_element_type(filtered_elements)
+
             # Limit to reasonable number of elements
             max_elements = 20
-            if len(filtered_elements) > max_elements:
-                filtered_elements = filtered_elements[:max_elements]
+            if len(deduplicated_elements) > max_elements:
+                deduplicated_elements = deduplicated_elements[:max_elements]
 
             self.logger.debug(
                 "Filtering and prioritization complete",
-                filtered_count=len(filtered_elements)
+                filtered_count=len(deduplicated_elements)
             )
 
-            return filtered_elements
+            return deduplicated_elements
 
         except Exception as e:
             self.logger.error("Error during filtering", error=str(e))
             return elements
+
+    def _deduplicate_by_element_type(self, elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Deduplicate elements by type - keep only one representative of each element pattern.
+
+        Groups elements by:
+        - Tag + role (e.g., button-tooltip, button-share)
+        - Tag + class prefix (e.g., button.share-*, div.tooltip-*)
+        - Tag + aria-label pattern (e.g., Share to *)
+
+        Returns the highest-scoring element from each group.
+        """
+        try:
+            element_groups = {}
+
+            for element in elements:
+                element_type = self._get_element_type_signature(element)
+
+                # Keep the highest scoring element in each group
+                if element_type not in element_groups:
+                    element_groups[element_type] = element
+                else:
+                    # Replace if this element has higher INP potential
+                    current_score = element_groups[element_type].get('inp_potential_score', 0)
+                    new_score = element.get('inp_potential_score', 0)
+                    if new_score > current_score:
+                        element_groups[element_type] = element
+
+            deduplicated = list(element_groups.values())
+
+            # Re-sort by INP potential after deduplication
+            deduplicated.sort(key=lambda x: x.get('inp_potential_score', 0), reverse=True)
+
+            excluded_count = len(elements) - len(deduplicated)
+            if excluded_count > 0:
+                self.logger.info(
+                    "Deduplicated similar elements",
+                    total_elements=len(elements),
+                    unique_types=len(deduplicated),
+                    duplicates_removed=excluded_count
+                )
+
+            return deduplicated
+
+        except Exception as e:
+            self.logger.error("Error deduplicating elements", error=str(e))
+            return elements
+
+    def _get_element_type_signature(self, element: Dict[str, Any]) -> str:
+        """
+        Generate a signature for an element type to group similar elements.
+
+        Returns a string like: "button-share", "button-tooltip", "a-link", etc.
+        """
+        tag = element.get('tag', 'unknown').lower()
+        role = element.get('type', '').lower()
+        text = (element.get('text', '') or element.get('label', '')).lower()
+        selector = element.get('selector', '').lower()
+
+        # Check for common patterns
+        patterns = {
+            'share': ['share', 'tweet', 'facebook', 'twitter', 'linkedin', 'pinterest'],
+            'tooltip': ['tooltip', 'popover', 'hint'],
+            'accordion': ['accordion', 'collapse', 'expand'],
+            'tab': ['tab-', 'tab_'],
+            'carousel': ['carousel', 'slider', 'prev', 'next', 'slide'],
+            'modal': ['modal', 'dialog', 'popup'],
+            'dropdown': ['dropdown', 'select', 'menu'],
+            'filter': ['filter', 'sort'],
+            'search': ['search'],
+            'close': ['close', 'dismiss', 'cancel'],
+        }
+
+        # Check text and selector for patterns
+        for pattern_name, keywords in patterns.items():
+            for keyword in keywords:
+                if keyword in text or keyword in selector:
+                    return f"{tag}-{pattern_name}"
+
+        # Check for aria-label patterns
+        aria_label = element.get('label', '').lower()
+        if 'share' in aria_label or 'tweet' in aria_label:
+            return f"{tag}-share"
+
+        # Extract class prefix (first class)
+        if 'class' in selector:
+            import re
+            class_match = re.search(r'\.([a-zA-Z0-9_-]+)', selector)
+            if class_match:
+                class_prefix = class_match.group(1).split('-')[0].split('_')[0]
+                return f"{tag}-{class_prefix}"
+
+        # Fallback: tag + role
+        return f"{tag}-{role}" if role else tag
 
     def _calculate_inp_potential(self, element: Dict[str, Any]) -> float:
         """Calculate how likely an element is to cause INP issues."""

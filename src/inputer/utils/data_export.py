@@ -151,7 +151,7 @@ class DataExporter:
             if csv_rows:
                 fieldnames = csv_rows[0].keys() if csv_rows else []
 
-                with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+                with open(csv_path, 'w', newline='', encoding='utf-8-sig') as f:
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(csv_rows)
@@ -244,7 +244,7 @@ class DataExporter:
             if summary_rows:
                 fieldnames = summary_rows[0].keys()
 
-                with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+                with open(csv_path, 'w', newline='', encoding='utf-8-sig') as f:
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(summary_rows)
@@ -452,12 +452,21 @@ class DataExporter:
 
                 for url, worst_inp in url_worst_inps.items():
                     is_outlier = worst_inp > outlier_threshold and worst_inp > 200  # Must be > 200ms too
+
+                    # Use text flags instead of emojis for CSV compatibility
+                    if worst_inp > 500:
+                        flag = 'CRITICAL'
+                    elif is_outlier:
+                        flag = 'WARNING'
+                    else:
+                        flag = 'OK'
+
                     outlier_data[url] = {
                         'is_outlier': is_outlier,
                         'worst_inp': worst_inp,
                         'median_worst_inp': median_worst_inp,
                         'threshold': outlier_threshold,
-                        'flag': '🚨' if worst_inp > 500 else '⚠️' if is_outlier else '✅'
+                        'flag': flag
                     }
 
             # Aggregate problematic elements across URLs
