@@ -12,7 +12,6 @@ import structlog
 
 from inputer.config.settings import Settings
 from inputer.interfaces.playwright_client import PlaywrightClient
-from inputer.interfaces.llm_client import LLMClient
 from inputer.core.element_discovery import ElementDiscoveryEngine
 from inputer.core.interaction_engine import UserInteractionEngine
 from inputer.core.performance_analyzer import PerformanceAnalyzer
@@ -26,11 +25,7 @@ class PerformanceOrchestrator:
     """
     Main orchestrator that coordinates all components for automated INP hunting.
 
-    Implements the Observe-Reason-Act cycle:
-    1. Observe: Capture current browser state
-    2. Reason: Use LLM to decide next action
-    3. Act: Execute browser interaction
-    4. Measure: Analyze performance impact
+    Systematically tests interactive elements to find performance issues.
     """
 
     def __init__(self, settings: Settings):
@@ -40,7 +35,6 @@ class PerformanceOrchestrator:
 
         # Core components
         self.playwright_client: Optional[PlaywrightClient] = None
-        self.llm_client: Optional[LLMClient] = None
         self.element_discovery: Optional[ElementDiscoveryEngine] = None
         self.interaction_engine: Optional[UserInteractionEngine] = None
         self.performance_analyzer: Optional[PerformanceAnalyzer] = None
@@ -67,9 +61,6 @@ class PerformanceOrchestrator:
             self.playwright_client.session_id = self.current_session_id
             self.playwright_client.performance_config = self.settings.performance
             await self.playwright_client.initialize()
-
-            # Initialize LLM client
-            self.llm_client = LLMClient(self.settings.llm_agent)
 
             # Initialize other components
             self.element_discovery = ElementDiscoveryEngine(
@@ -402,9 +393,6 @@ class PerformanceOrchestrator:
         try:
             if self.playwright_client:
                 await self.playwright_client.cleanup()
-
-            if self.llm_client:
-                await self.llm_client.cleanup()
 
         except Exception as e:
             self.logger.error("Error during cleanup", error=str(e))

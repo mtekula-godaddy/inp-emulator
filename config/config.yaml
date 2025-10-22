@@ -16,13 +16,6 @@ mcp_server:
   mobile_emulation: true  # Enable mobile emulation (Pixel 5)
   network_throttling: "Fast 4G"  # Realistic mobile network conditions
 
-llm_agent:
-  url: "http://localhost:11434"
-  model: "llama2"
-  temperature: 0.3
-  max_tokens: 1000
-  timeout: 30
-
 performance:
   max_interactions_per_page: 10
   interaction_delay_min: 500

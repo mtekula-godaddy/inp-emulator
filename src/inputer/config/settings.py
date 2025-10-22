@@ -33,16 +33,6 @@ class MCPServerConfig(BaseModel):
     network_throttling: Optional[str] = Field(default=None, description="Network throttling profile (Fast 3G, Slow 4G, 3G, or None)")
 
 
-class LLMAgentConfig(BaseModel):
-    """Configuration for LLM agent."""
-
-    url: str = Field(default="http://localhost:11434", description="LLM agent URL")
-    model: str = Field(default="llama2", description="Model name")
-    temperature: float = Field(default=0.3, description="LLM temperature")
-    max_tokens: int = Field(default=1000, description="Maximum tokens per response")
-    timeout: int = Field(default=30, description="Request timeout (seconds)")
-
-
 class InteractionTimingConfig(BaseModel):
     """Configuration for realistic interaction timing."""
     high_priority: List[int] = Field(default=[1000, 3000], description="High priority elements timing range (ms)")
@@ -91,7 +81,6 @@ class Settings(BaseModel):
     port: int = Field(default=8000, description="Application port")
 
     mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig)
-    llm_agent: LLMAgentConfig = Field(default_factory=LLMAgentConfig)
     performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
     data: DataConfig = Field(default_factory=DataConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
@@ -172,21 +161,6 @@ class Settings(BaseModel):
 
         if mcp_config:
             config["mcp_server"] = mcp_config
-
-        # LLM Agent settings
-        llm_config = {}
-        if os.getenv("LLM_AGENT_URL"):
-            llm_config["url"] = os.getenv("LLM_AGENT_URL")
-        if os.getenv("LLM_MODEL"):
-            llm_config["model"] = os.getenv("LLM_MODEL")
-        if os.getenv("LLM_TEMPERATURE"):
-            llm_config["temperature"] = float(os.getenv("LLM_TEMPERATURE"))
-        if os.getenv("LLM_MAX_TOKENS"):
-            llm_config["max_tokens"] = int(os.getenv("LLM_MAX_TOKENS"))
-        if os.getenv("LLM_TIMEOUT"):
-            llm_config["timeout"] = int(os.getenv("LLM_TIMEOUT"))
-        if llm_config:
-            config["llm_agent"] = llm_config
 
         # Performance settings
         perf_config = {}

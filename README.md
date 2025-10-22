@@ -1,6 +1,6 @@
 # Inputer Performance Monitor
 
-An intelligent, automated system for discovering and analyzing Interaction to Next Paint (INP) performance issues on web pages using Playwright automation and AI-driven decision making.
+An intelligent, automated system for discovering and analyzing Interaction to Next Paint (INP) performance issues on web pages using Playwright automation and systematic element testing.
 
 ## 🎯 Overview
 
@@ -16,11 +16,10 @@ Inputer Performance Monitor automatically:
 
 ## 🏗️ Architecture
 
-The system consists of three main components:
+The system consists of two main components:
 
-1. **Python Orchestrator** (`src/python/`) - Central coordination and intelligence
+1. **Python Orchestrator** (`src/inputer/`) - Central coordination and intelligence
 2. **Playwright Browser Automation** - Cross-browser automation and performance measurement
-3. **LLM Agent** - AI-driven decision making for element selection (Local/AWS Bedrock)
 
 ### Key Components
 
@@ -36,7 +35,7 @@ The system consists of three main components:
   - Visibility changes (dialogs, overlays, drawers via getBoundingClientRect)
   - Text appearance (slide-in menus, filters, modals)
 - **Data Exporter** - Generates reports in multiple formats (JSON, CSV, HTML)
-- **Test Runner** - Testing capabilities without LLM dependency
+- **Test Runner** - Systematic testing capabilities with multiple strategies
 - **Screenshot Capture** - Session-organized before/after screenshots for debugging
 
 ## 🚀 Quick Start
@@ -45,7 +44,6 @@ The system consists of three main components:
 
 - Python 3.13+
 - Chrome/Chromium browser
-- Local LLM agent (e.g., Ollama with Llama2) OR AWS Bedrock access (optional for test mode)
 
 ### Installation
 
@@ -75,70 +73,45 @@ The system consists of three main components:
    # Edit .env with your settings
    ```
 
-4. **Start the LLM agent (for standard mode):**
-   ```bash
-   # Example with Ollama
-   ollama serve
-   ollama pull llama2
-   ```
-
 ### Usage Examples
 
-#### Standard Analysis (with LLM)
-```bash
-# Basic analysis
-inputer -u https://example.com
+#### Element Scan Mode
 
-# Multiple URLs with custom settings
-inputer \
-  -u https://site1.com \
-  -u https://site2.com \
-  --max-interactions 15 \
-  --verbose
-```
-
-#### Test Mode (without LLM) 🧪
-
-**Perfect for development and CI/CD where you don't want LLM dependencies:**
+**Systematic testing of all discovered interactive elements:**
 
 ```bash
 # Element scan mode - Tests all discovered elements systematically
 # Default: Tests 2 elements per page, excludes nav/footer/share buttons
+# Replace /path/to/inputer with your actual project path
 PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority
 
+# Or use $(pwd) to auto-detect current directory (run from project root)
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority
+
 # Test more elements (e.g., 5)
-PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority 5
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority 5
 
 # Include header/nav elements (default: excluded)
-PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority --include-header
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority --include-header
 
 # Test multiple URLs from a file
-PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py urls.txt element_scan priority
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py urls.txt element_scan priority
 
 # Different strategies
-PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan sequential   # Test in order
-PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan random       # Random selection
-PYTHONPATH=/path/to/inputer/src python3 src/inputer/testing/test_runner.py https://example.com element_scan problematic  # Target known problem elements
-```
-
-#### AWS Bedrock Mode (Production)
-```bash
-# Configure for AWS Bedrock
-export LLM_PROVIDER=bedrock
-export LLM_MODEL=anthropic.claude-3-haiku-20240307-v1:0
-inputer -u https://example.com -c config/aws.yaml
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan sequential   # Test in order
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan random       # Random selection
+PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan problematic  # Target known problem elements
 ```
 
 ## 🧪 Testing Modes
 
 ### When to Use Each Mode
 
-| Mode | Use Case | LLM Required | Best For |
-|------|----------|--------------|----------|
-| **Standard** | Production analysis | ✅ | Deep insights, intelligent element selection |
-| **Mock** | Development/CI | ❌ | Quick testing, debugging element discovery |
-| **Element Scan** | Comprehensive testing | ❌ | Testing all elements, baseline analysis |
-| **Deterministic** | Regression testing | ❌ | Consistent, repeatable test runs |
+| Mode | Use Case | Best For |
+|------|----------|----------|
+| **Element Scan** | Comprehensive testing | Testing all elements, baseline analysis |
+| **Mock** | Development/CI | Quick testing, debugging element discovery |
+| **Deterministic** | Regression testing | Consistent, repeatable test runs |
 
 ### Testing Strategies
 
@@ -149,11 +122,10 @@ inputer -u https://example.com -c config/aws.yaml
 
 ### Test Mode Benefits
 
-- **No LLM Dependencies**: Run without Ollama or AWS Bedrock
-- **Faster Execution**: No API calls or model loading delays
+- **Fast Execution**: No external dependencies or API calls
 - **Deterministic Results**: Predictable for CI/CD pipelines
 - **Development Friendly**: Debug element discovery and interaction logic
-- **Cost Effective**: No LLM API costs for testing
+- **Cost Effective**: No API costs
 
 ## 📊 Understanding Results
 
@@ -202,52 +174,11 @@ INTERACTION_DELAY_MIN=500
 INTERACTION_DELAY_MAX=2000
 SCREENSHOT_CAPTURE=true  # Capture before/after screenshots
 VIDEO_CAPTURE=false  # Record session videos
-
-# LLM Configuration (Local)
-LLM_AGENT_URL=http://localhost:11434
-LLM_MODEL=llama2
-
-# LLM Configuration (AWS Bedrock)
-LLM_PROVIDER=bedrock
-LLM_MODEL=anthropic.claude-3-haiku-20240307-v1:0
 ```
 
 ### Configuration Files
 
-- `config/config.yaml` - Local development
-- `config/aws.yaml` - AWS Bedrock production
-
-## 🌩️ AWS Deployment
-
-### One-Command AWS Deployment
-
-```bash
-# Deploy entire infrastructure to AWS
-./scripts/deploy-aws.sh
-
-# Prompts for VPC ID and Subnet IDs
-# Creates: ECS Fargate + Bedrock + S3 + Lambda + CloudWatch
-```
-
-### AWS Features
-
-- **ECS Fargate**: Serverless container deployment
-- **AWS Bedrock**: Managed Claude LLM service
-- **S3**: Results storage with lifecycle policies
-- **Lambda**: Scheduled analysis triggers
-- **CloudWatch**: Comprehensive monitoring and alerting
-
-### AWS Usage
-
-```bash
-# Manual analysis via Lambda
-aws lambda invoke --function-name inputer-scheduled-prod \
-  --payload '{"urls":["https://example.com"],"subnets":["subnet-xxx"]}' \
-  response.json
-
-# View results
-aws s3 sync s3://inputer-results-prod-123456789012/results/ ./results/
-```
+- `config/config.yaml` - Local development configuration
 
 ## 🔍 Development and Testing
 
@@ -282,11 +213,11 @@ mypy src/python/
 ### Quick Development Testing
 
 ```bash
-# Test element discovery without LLM
-python src/python/main.py -u https://example.com --test-mode element_scan --max-interactions 3
+# Test element discovery
+python src/inputer/main.py -u https://example.com --test-mode element_scan --max-interactions 3
 
 # Debug mode with screenshots
-python src/python/main.py -u https://example.com --test-mode mock --verbose
+python src/inputer/main.py -u https://example.com --test-mode mock --verbose
 ```
 
 ## 🔍 Troubleshooting
@@ -300,24 +231,17 @@ python src/python/main.py -u https://example.com --test-mode mock --verbose
    export CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
    ```
 
-2. **LLM agent connection fails:**
-   ```bash
-   # Test LLM endpoint
-   curl http://localhost:11434/v1/models
-   ollama list  # For Ollama
-   ```
-
-3. **Test mode not working:**
+2. **Test mode not working:**
    ```bash
    # Verify test mode is active
-   python src/python/main.py -u https://example.com --test-mode mock --verbose
+   python src/inputer/main.py -u https://example.com --test-mode mock --verbose
    ```
 
 ### Debug Mode
 
 Enable verbose logging:
 ```bash
-python src/python/main.py --verbose -u https://example.com --test-mode mock
+python src/inputer/main.py --verbose -u https://example.com --test-mode mock
 ```
 
 ## 📈 Performance Optimization
@@ -330,7 +254,7 @@ python src/python/main.py --verbose -u https://example.com --test-mode mock
 - Enable `--verbose` for debugging
 
 **Production Analysis:**
-- Use AWS Bedrock for reliability
+- Use `--test-mode element_scan` for comprehensive testing
 - Configure appropriate `max_interactions_per_page`
 - Set up monitoring and alerting
 
@@ -344,19 +268,19 @@ python src/python/main.py --verbose -u https://example.com --test-mode mock
 ### Development Teams
 ```bash
 # Pre-deployment performance testing
-python src/python/main.py -u https://staging.myapp.com --test-mode element_scan
+python src/inputer/main.py -u https://staging.myapp.com --test-mode element_scan
 ```
 
 ### QA Automation
 ```bash
-# CI/CD integration without LLM dependencies
-python src/python/main.py -u https://app.example.com --test-mode mock --test-strategy priority
+# CI/CD integration
+python src/inputer/main.py -u https://app.example.com --test-mode mock --test-strategy priority
 ```
 
 ### Performance Monitoring
 ```bash
-# Production monitoring with AWS
-aws lambda invoke --function-name inputer-scheduled-prod --payload '{"urls":["https://production.app"]}'
+# Scheduled monitoring
+python src/inputer/main.py -u https://production.app --test-mode element_scan
 ```
 
 ## 🤝 Contributing
@@ -364,7 +288,7 @@ aws lambda invoke --function-name inputer-scheduled-prod --payload '{"urls":["ht
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make changes and add tests
-4. Run tests: `uv run pytest` and `uv run black src/python/`
+4. Run tests: `uv run pytest` and `uv run black src/inputer/`
 5. Commit changes: `git commit -m 'Add amazing feature'`
 6. Push to branch: `git push origin feature/amazing-feature`
 7. Open a Pull Request
@@ -377,7 +301,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues:** [GitHub Issues](https://github.com/your-org/inputer/issues)
 - **Documentation:** [Complete Documentation](docs.md)
-- **AWS Deployment:** [AWS Deployment Guide](docs/AWS-DEPLOYMENT.md)
 
 ## 🎯 Key Features Summary
 
@@ -387,15 +310,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ✅ **Mobile Emulation** - Pixel 5 device emulation with touch events (tap vs click)
 ✅ **Advanced Outcome Detection** - 11 detection methods including CSS visibility, text appearance, DOM mutations
 ✅ **Network Throttling** - Fast 4G, Slow 4G, Fast 3G simulation for realistic testing
-✅ **AI-Driven Testing** - LLM-powered element selection
-✅ **Test Modes** - Run without LLM dependencies
+✅ **Multiple Test Strategies** - Priority, sequential, random, and problematic element selection
 ✅ **Realistic User Simulation** - Human-like interaction timing with mobile/desktop differentiation
 ✅ **Real-Time Performance Measurement** - True INP from tap to visual outcome (not just first paint)
 ✅ **Session Screenshots** - Organized before/after captures in `data/screenshots/{session_id}/`
 ✅ **Multi-Format Reporting** - JSON, CSV, HTML outputs
-✅ **AWS Production Ready** - ECS Fargate + Bedrock deployment
 ✅ **Development Friendly** - Test modes for debugging and CI/CD
 ✅ **Bot Detection Avoidance** - navigator.webdriver override, headed mode default
-✅ **Enterprise Monitoring** - CloudWatch dashboards and alerting
 
-Perfect for development teams who need both intelligent analysis and fast testing capabilities with real mobile device accuracy!
+Perfect for development teams who need systematic INP testing with real mobile device accuracy!

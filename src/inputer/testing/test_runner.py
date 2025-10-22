@@ -13,7 +13,6 @@ import structlog
 from inputer.config.settings import Settings
 from inputer.core.orchestrator import PerformanceOrchestrator
 from inputer.core.page_analyzer import PageAnalyzer
-from inputer.testing.mock_llm import MockLLMClient, DeterministicMockLLM
 
 
 logger = structlog.get_logger(__name__)
@@ -111,21 +110,12 @@ class TestRunner:
             await orchestrator.cleanup()
 
     async def _create_test_orchestrator(self, strategy: str) -> PerformanceOrchestrator:
-        """Create orchestrator with mock LLM and Playwright client."""
-
-        # Create mock LLM based on test mode
-        if self.test_mode == "deterministic":
-            mock_llm = DeterministicMockLLM()
-        else:
-            mock_llm = MockLLMClient(strategy=strategy)
+        """Create orchestrator with Playwright client."""
 
         # Create modified orchestrator with test-specific data directory
         test_settings = self.settings
         test_settings.data.output_dir = "./test_results"
         orchestrator = PerformanceOrchestrator(test_settings)
-
-        # Replace LLM client with mock (monkey patch for testing)
-        orchestrator._mock_llm = mock_llm
 
         # Generate session ID for this test run
         from datetime import datetime
@@ -140,9 +130,6 @@ class TestRunner:
         playwright_client.data_dir = "test_results"  # Store all test artifacts in test_results/
         await playwright_client.initialize()
         orchestrator.playwright_client = playwright_client
-
-        # Initialize other components but skip MCP initialization
-        orchestrator.llm_client = mock_llm
 
         # Initialize element discovery with Playwright
         from inputer.core.element_discovery import ElementDiscoveryEngine
