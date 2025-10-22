@@ -272,7 +272,11 @@ Setup:
 ```bash
 git clone <repository-url>
 cd inputer
-./scripts/start.sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
+source .venv/bin/activate
+uv pip install -e .
+cp .env.example .env
 ```
 
 Run tests:

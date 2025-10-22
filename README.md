@@ -45,11 +45,6 @@ Installation:
 ```bash
 git clone <repository-url>
 cd inputer
-./scripts/start.sh
-```
-
-Or manually:
-```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 source .venv/bin/activate
