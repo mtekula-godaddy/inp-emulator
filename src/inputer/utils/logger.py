@@ -44,7 +44,7 @@ def setup_logging(
     if json_format:
         processors.append(structlog.processors.JSONRenderer())
     else:
-        processors.append(structlog.dev.ConsoleRenderer())
+        processors.append(structlog.dev.ConsoleRenderer(pad_event=25))
 
     structlog.configure(
         processors=processors,

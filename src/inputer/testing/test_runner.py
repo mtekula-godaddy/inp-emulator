@@ -393,15 +393,12 @@ class TestRunner:
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        timestamp = int(time.time())
-        report_filename = f"test_report_{strategy}_{timestamp}.json"
-        report_path = output_path / report_filename
-
         # Use orchestrator's data exporter
         from inputer.utils.data_export import DataExporter
         exporter = DataExporter(self.settings.data)
 
-        await exporter.export_results(results, str(output_path))
+        # Export results and get actual report path
+        report_path = await exporter.export_results(results, str(output_path))
 
         return report_path
 
@@ -433,7 +430,7 @@ async def run_performance_test(
     urls: List[str],
     test_mode: str = "mock",
     strategy: str = "priority",
-    max_interactions: int = 2,
+    max_interactions: int = 3,
     config_file: Optional[str] = None,
     skip_header: bool = True
 ):
@@ -511,8 +508,8 @@ Examples:
                        help="Test mode: mock, deterministic, element_scan (default: mock)")
     parser.add_argument("strategy", nargs="?", default="priority",
                        help="Strategy: priority, sequential, random, problematic (default: priority)")
-    parser.add_argument("max_interactions", nargs="?", type=int, default=2,
-                       help="Number of elements to test per page (default: 2)")
+    parser.add_argument("max_interactions", nargs="?", type=int, default=3,
+                       help="Number of elements to test per page (default: 3)")
 
     parser.add_argument("--include-header", action="store_true", dest="include_header",
                        help="Include header elements in testing (default: exclude)")

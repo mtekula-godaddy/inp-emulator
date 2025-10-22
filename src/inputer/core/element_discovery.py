@@ -592,6 +592,18 @@ class ElementDiscoveryEngine:
                         excluded=excluded_count,
                         remaining=len(nav_footer_filtered)
                     )
+                    # Log top 5 excluded elements for debugging
+                    for idx, elem in enumerate(filtered_elements[:5]):
+                        if elem not in nav_footer_filtered:
+                            self.logger.debug(
+                                "Excluded element (nav/footer)",
+                                selector=elem.get('selector', '')[:60],
+                                text=(elem.get('label') or elem.get('text', ''))[:40],
+                                y_position=elem.get('position', {}).get('y'),
+                                score=elem.get('inp_potential_score')
+                            )
+                            if idx >= 4:  # Only show first 5
+                                break
                 filtered_elements = nav_footer_filtered
 
             # Deduplicate by element type - keep one representative of each type
@@ -606,6 +618,17 @@ class ElementDiscoveryEngine:
                 "Filtering and prioritization complete",
                 filtered_count=len(deduplicated_elements)
             )
+
+            # Log top 10 elements that will be available for testing
+            self.logger.info("Top 10 scored elements for testing:")
+            for idx, elem in enumerate(deduplicated_elements[:10]):
+                self.logger.info(
+                    f"  #{idx+1}",
+                    score=elem.get('inp_potential_score', 0),
+                    y_pos=elem.get('position', {}).get('y'),
+                    text=(elem.get('label') or elem.get('text', ''))[:50],
+                    selector=elem.get('selector', '')[:60]
+                )
 
             return deduplicated_elements
 
@@ -708,16 +731,24 @@ class ElementDiscoveryEngine:
         return f"{tag}-{role}" if role else tag
 
     def _calculate_inp_potential(self, element: Dict[str, Any]) -> float:
-        """Calculate how likely an element is to cause INP issues."""
+        """
+        Calculate how likely an element is to cause INP issues.
+
+        Prioritizes elements that users are most likely to click during page load:
+        - Large, prominent elements (size)
+        - Elements higher on the page (position)
+        - Primary CTAs with action-oriented text
+        """
         score = 0.0
 
         try:
             tag = element.get("tag", "").lower()
             element_type = element.get("type", "").lower()
-            text = element.get("text", "").lower()
+            text = (element.get("text", "") or element.get("label", "")).lower()
             attributes = element.get("attributes", {})
             class_names = (attributes.get("class", "") or "").lower()
             data_attrs = attributes.get("data-*", "") or ""
+            position = element.get("position", {})
 
             # Base scores by element type
             type_scores = {
@@ -742,11 +773,56 @@ class ElementDiscoveryEngine:
             else:
                 score += 1.0  # Default score
 
-            # Bonus for complex class names
+            # --- USER BEHAVIOR SCORING ---
+
+            # 1. POSITION: Elements higher on page are clicked first (above the fold priority)
+            # This is the DOMINANT factor - users see and click above-fold elements during page load
+            y_position = position.get("y", 1000)
+            if y_position < 300:  # Very top of page
+                score += 5.0
+            elif y_position < 600:  # Above fold on mobile
+                score += 4.0
+            elif y_position < 900:  # Above fold on desktop
+                score += 2.0
+            elif y_position < 1500:  # One scroll down
+                score += 0.5
+            else:  # Way down page (like disclaimers at Y=12853)
+                score -= 2.0  # Penalize heavily - users won't see until much later
+
+            # 2. SIZE: Larger elements are more prominent and likely to be clicked
+            width = position.get("width", 0)
+            height = position.get("height", 0)
+            area = width * height
+            if area > 15000:  # Large button/CTA (e.g., 200x75)
+                score += 2.0
+            elif area > 8000:  # Medium button (e.g., 150x50)
+                score += 1.0
+
+            # 3. PRIMARY CTA INDICATORS: Main action buttons
+            primary_indicators = [
+                "primary", "cta", "hero", "get started", "buy now",
+                "see plans", "pricing", "sign up", "start free",
+                "learn more", "shop now", "add to cart"
+            ]
+            for indicator in primary_indicators:
+                if indicator in class_names or indicator in text:
+                    score += 2.0
+                    break
+
+            # 4. SECONDARY/UTILITY BUTTONS: De-prioritize
+            utility_indicators = [
+                "tooltip", "help", "info", "close", "dismiss",
+                "cancel", "back", "previous", "skip"
+            ]
+            for indicator in utility_indicators:
+                if indicator in class_names or indicator in text:
+                    score -= 1.5
+                    break
+
+            # Bonus for complex class names (complex UI = potential INP issues)
             complex_classes = [
                 "dropdown", "accordion", "modal", "carousel", "slider",
-                "tooltip", "popover", "datepicker", "autocomplete",
-                "infinite", "lazy", "dynamic", "ajax"
+                "datepicker", "autocomplete", "infinite", "lazy", "dynamic", "ajax"
             ]
             for complex_class in complex_classes:
                 if complex_class in class_names:

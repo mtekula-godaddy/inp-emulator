@@ -395,7 +395,8 @@ class PlaywrightClient:
                     const selectors = [
                         'button', 'a', 'input', 'select', 'textarea',
                         '[role="button"]', '[role="link"]', '[role="tab"]',
-                        '[role="menuitem"]', '[role="checkbox"]'
+                        '[role="menuitem"]', '[role="checkbox"]',
+                        '[tabindex="0"]', 'li[tabindex]', 'div[tabindex]'
                     ];
 
                     // Generate a unique CSS selector for an element
@@ -410,19 +411,42 @@ class PlaywrightClient:
                             }
                         }
 
-                        // Try ID first
-                        if (el.id) {
-                            const selector = '#' + CSS.escape(el.id);
-                            if (validateSelector(selector)) return selector;
+                        // Helper to check if ID looks like a UUID/hash (unstable)
+                        function isUnstableId(id) {
+                            // UUIDs: 8-4-4-4-12 hex format (e.g., 6ec9f987-8b25-4e2d-bdcd-fb8d47f1c885)
+                            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+                                return true;
+                            }
+                            // ID prefix patterns (e.g., id-50170cd4-f828-4779-bfac-26781e4ccfca)
+                            if (/^id-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+                                return true;
+                            }
+                            // Long hex strings (likely hashes, e.g., 4b0e9d37-7d64-4304-b086-32833c192f11)
+                            if (/^[0-9a-f-]{20,}$/i.test(id)) {
+                                return true;
+                            }
+                            return false;
                         }
 
-                        // Try data-cy or data-testid
+                        // Try data-cy or data-testid first (most stable)
                         if (el.getAttribute('data-cy')) {
                             const selector = '[data-cy="' + el.getAttribute('data-cy') + '"]';
                             if (validateSelector(selector)) return selector;
                         }
                         if (el.getAttribute('data-testid')) {
                             const selector = '[data-testid="' + el.getAttribute('data-testid') + '"]';
+                            if (validateSelector(selector)) return selector;
+                        }
+
+                        // Try data-track-name (often stable)
+                        if (el.getAttribute('data-track-name')) {
+                            const selector = '[data-track-name="' + el.getAttribute('data-track-name') + '"]';
+                            if (validateSelector(selector)) return selector;
+                        }
+
+                        // Try ID only if it looks stable (not a UUID/hash)
+                        if (el.id && !isUnstableId(el.id)) {
+                            const selector = '#' + CSS.escape(el.id);
                             if (validateSelector(selector)) return selector;
                         }
 
@@ -490,19 +514,40 @@ class PlaywrightClient:
                             const isVisible = rect.width > 0 && rect.height > 0;
 
                             if (isVisible) {
-                                // Get element label with priority: button text > aria-label > data attributes > alt text
+                                // Get element label - prioritize human-readable text over test attributes
                                 let elementLabel = '';
-                                if (el.tagName === 'BUTTON' || el.tagName === 'A') {
-                                    elementLabel = el.textContent?.trim() || '';
+
+                                // 1. Try visible text content first (most human-readable)
+                                const textContent = el.textContent?.trim() || '';
+                                if (textContent && textContent.length > 0 && textContent.length < 200) {
+                                    elementLabel = textContent;
                                 }
+
+                                // 2. If no text, try aria-label (accessibility label)
                                 if (!elementLabel) {
-                                    elementLabel = el.getAttribute('aria-label') ||
-                                                 el.getAttribute('data-track-name') ||
-                                                 el.getAttribute('title') ||
-                                                 el.getAttribute('alt') ||
-                                                 el.value ||
-                                                 el.textContent?.trim() ||
-                                                 '';
+                                    elementLabel = el.getAttribute('aria-label') || '';
+                                }
+
+                                // 3. Try title attribute
+                                if (!elementLabel) {
+                                    elementLabel = el.getAttribute('title') || '';
+                                }
+
+                                // 4. For inputs, use placeholder or value
+                                if (!elementLabel && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+                                    elementLabel = el.getAttribute('placeholder') || el.value || '';
+                                }
+
+                                // 5. For images, use alt text
+                                if (!elementLabel && el.tagName === 'IMG') {
+                                    elementLabel = el.getAttribute('alt') || '';
+                                }
+
+                                // 6. Last resort: use data-track-name or data-cy (not as readable)
+                                if (!elementLabel) {
+                                    elementLabel = el.getAttribute('data-track-name') ||
+                                                 el.getAttribute('data-cy') ||
+                                                 el.tagName.toLowerCase();
                                 }
 
                                 elements.push({

@@ -19,12 +19,16 @@ Core capabilities:
 ## How it works
 
 1. Loads a page in Playwright-controlled browser
-2. Discovers interactive elements (buttons, links, dropdowns, form controls, carousels, tabs)
+2. Discovers interactive elements (buttons, links, dropdowns, form controls, carousels, tabs, expandable lists)
 3. Filters out navigation, footer, and share buttons
-4. Scores elements by likelihood to cause INP issues
+4. Scores elements by likelihood to cause INP issues based on user behavior:
+   - **Position is dominant**: Above-the-fold elements score highest, below-fold elements are penalized
+   - Element size (larger, more prominent CTAs score higher)
+   - Primary action indicators ("See Plans", "Buy Now", "Get Started")
+   - De-prioritizes utility buttons (tooltips, help, close)
 5. Interacts with elements in priority order
 6. Measures INP for each interaction
-7. Captures before/after screenshots
+7. Captures before/after screenshots with element labels
 8. Exports results showing which elements caused the worst INP scores
 
 Element filtering excludes navigation/footer/social buttons by default. Use `--include-header` to test these elements.
@@ -56,22 +60,22 @@ cp .env.example .env
 
 Basic command:
 ```bash
-PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority
+inputer-test https://example.com element_scan priority
 ```
 
 Test 5 elements instead of default 2:
 ```bash
-PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority 5
+inputer-test https://example.com element_scan priority 5
 ```
 
 Include navigation/header elements:
 ```bash
-PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py https://example.com element_scan priority --include-header
+inputer-test https://example.com element_scan priority --include-header
 ```
 
 Test multiple URLs from a file:
 ```bash
-PYTHONPATH=$(pwd)/src python3 src/inputer/testing/test_runner.py urls.txt element_scan priority
+inputer-test urls.txt element_scan priority
 ```
 
 Selection strategies:
@@ -101,7 +105,7 @@ URLs Tested: 1/1
 Total Interactions: 8
 Worst INP: 847ms on https://example.com
 
-Report saved to: ./test_results/test_report_priority_1699123456.json
+Report saved to: test_results/inputer_report_20251022_110833.json
 ```
 
 Screenshots saved to `data/screenshots/{session_id}/` showing before/after state for each interaction.

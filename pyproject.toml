@@ -120,7 +120,7 @@ inputer-test = "inputer.testing.test_runner:main"
 
 [project.urls]
 Homepage = "https://github.com/your-org/inputer"
-Documentation = "https://github.com/your-org/inputer/blob/main/docs.md"
+Documentation = "https://github.com/your-org/inputer/blob/main/README.md"
 Repository = "https://github.com/your-org/inputer"
 Issues = "https://github.com/your-org/inputer/issues"
 

@@ -365,7 +365,6 @@ uv run mypy src/inputer/
 1. **Verify Installation**: Run test commands above
 2. **Configure Environment**: Edit `.env` file
 3. **Run First Analysis**: Try test mode first
-4. **Explore Features**: Read [complete documentation](docs.md)
-5. **Deploy to AWS**: Use deployment guide
+4. **Explore Features**: Read [README.md](README.md)
 
-For comprehensive usage instructions, see [README.md](README.md) and [docs.md](docs.md).
+For comprehensive usage instructions, see [README.md](README.md).
