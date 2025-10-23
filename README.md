@@ -20,7 +20,7 @@ Core capabilities:
 
 ## How it works
 
-1. Loads a page in Playwright-controlled browser
+1. Loads a page in Playwright-controlled browser (emulating a smartphone viewport)
 2. Discovers interactive elements (buttons, links, dropdowns, form controls, carousels, tabs, expandable lists)
 3. Filters out navigation, footer, share buttons, disclaimers, and account links
 4. Scores elements by likelihood to cause INP issues based on user behavior:
