@@ -70,7 +70,7 @@ Basic command:
 inputer-test https://example.com element_scan priority
 ```
 
-Test 5 elements instead of default 2:
+Test 5 elements instead of default 3:
 ```bash
 inputer-test https://example.com element_scan priority 5
 ```
