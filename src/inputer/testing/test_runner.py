@@ -409,7 +409,8 @@ class TestRunner:
             "successful_urls": 0,
             "total_interactions": 0,
             "worst_inp_overall": None,
-            "worst_url": None
+            "worst_url": None,
+            "worst_element": None
         }
 
         for url, result in results.items():
@@ -421,6 +422,7 @@ class TestRunner:
                 if worst_inp and (not summary["worst_inp_overall"] or worst_inp > summary["worst_inp_overall"]):
                     summary["worst_inp_overall"] = worst_inp
                     summary["worst_url"] = url
+                    summary["worst_element"] = result.get("worst_element")
 
         return summary
 
@@ -468,7 +470,28 @@ async def run_performance_test(
     print(f"Total Interactions: {summary['total_interactions']}")
 
     if summary["worst_inp_overall"]:
-        print(f"Worst INP: {summary['worst_inp_overall']}ms on {summary['worst_url']}")
+        # For single URL, show element instead of URL
+        if summary['total_urls'] == 1:
+            # Get element label from results
+            worst_element_label = None
+            for url, result in test_results['results'].items():
+                if result.get('worst_inp') == summary['worst_inp_overall']:
+                    # Find the interaction with this INP score
+                    for interaction in result.get('interactions', []):
+                        inp_score = interaction.get('performance', {}).get('inp', {}).get('estimated_score')
+                        if inp_score == summary['worst_inp_overall']:
+                            element = interaction.get('element', {})
+                            worst_element_label = element.get('label') or element.get('text', 'Unknown element')
+                            break
+                    break
+
+            if worst_element_label:
+                print(f"Worst INP: {summary['worst_inp_overall']}ms on '{worst_element_label[:60]}'")
+            else:
+                print(f"Worst INP: {summary['worst_inp_overall']}ms")
+        else:
+            # For multiple URLs, show URL
+            print(f"Worst INP: {summary['worst_inp_overall']}ms on {summary['worst_url']}")
 
     print(f"\n📄 Report saved to: {test_results['report_path']}")
 

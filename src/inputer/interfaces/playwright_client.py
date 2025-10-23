@@ -513,6 +513,29 @@ class PlaywrightClient:
                             const rect = el.getBoundingClientRect();
                             const isVisible = rect.width > 0 && rect.height > 0;
 
+                            // Skip non-interactive tabindex elements
+                            if (el.hasAttribute('tabindex')) {
+                                // Check if it's actually interactive (has click handlers, aria role, or is a list item)
+                                const hasClickHandler = el.hasAttribute('onclick') ||
+                                                       el.getAttribute('data-track-promo-click') !== null ||
+                                                       el.getAttribute('data-track-eid-click') !== null;
+                                const hasInteractiveRole = el.getAttribute('role') === 'button' ||
+                                                          el.getAttribute('role') === 'link' ||
+                                                          el.getAttribute('role') === 'tab' ||
+                                                          el.getAttribute('role') === 'menuitem';
+                                const isListItem = el.tagName === 'LI' && el.closest('ul, ol');
+
+                                // Skip if it's just a focusable container (like image-container)
+                                const dataCy = el.getAttribute('data-cy') || '';
+                                const isContainer = dataCy.includes('container') ||
+                                                   dataCy.includes('wrapper') ||
+                                                   el.tagName === 'DIV' && !hasClickHandler && !hasInteractiveRole;
+
+                                if (isContainer && !hasClickHandler && !hasInteractiveRole && !isListItem) {
+                                    return; // Skip this element
+                                }
+                            }
+
                             if (isVisible) {
                                 // Get element label - prioritize human-readable text over test attributes
                                 let elementLabel = '';

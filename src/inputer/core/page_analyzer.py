@@ -177,43 +177,45 @@ class PageAnalyzer:
         Calculate input delay coefficient based on page characteristics.
 
         Formula:
-        Base: 5.0 (automation is typically 5x faster than real-world)
-        + 1.0 per 500KB of JS
-        + 1.0 if React/Angular/Vue detected
-        + 0.3 per third-party domain
-        + 0.5 per long task >50ms
+        Base: 2.5 (automation is typically 2-3x faster than real-world US users)
+        + 0.5 per 500KB of JS
+        + 0.5 if React/Angular/Vue detected
+        + 0.2 per third-party domain
+        + 0.3 per long task >50ms
+
+        Target: US users ~350ms real-world, distant countries up to 650ms
         """
         breakdown = {}
 
-        # Base multiplier
-        coefficient = 5.0
-        breakdown['base'] = 5.0
+        # Base multiplier - conservative estimate for US users on good networks
+        coefficient = 2.5
+        breakdown['base'] = 2.5
 
-        # JS bundle size penalty
+        # JS bundle size penalty (reduced from 1.0)
         js_size_mb = js_total_size / (1024 * 1024)
-        js_penalty = (js_total_size / (500 * 1024)) * 1.0
+        js_penalty = (js_total_size / (500 * 1024)) * 0.5
         coefficient += js_penalty
         breakdown['js_size'] = round(js_penalty, 2)
 
-        # Framework penalty
+        # Framework penalty (reduced from 1.0)
         framework_penalty = 0
         if any(fw in frameworks for fw in ['React', 'Angular', 'Vue']):
-            framework_penalty = 1.0
+            framework_penalty = 0.5
             coefficient += framework_penalty
         breakdown['framework'] = framework_penalty
 
-        # Third-party scripts penalty
-        third_party_penalty = third_party_count * 0.3
+        # Third-party scripts penalty (reduced from 0.3)
+        third_party_penalty = third_party_count * 0.2
         coefficient += third_party_penalty
         breakdown['third_party'] = round(third_party_penalty, 2)
 
-        # Long tasks penalty
-        long_task_penalty = long_tasks_count * 0.5
+        # Long tasks penalty (reduced from 0.5)
+        long_task_penalty = long_tasks_count * 0.3
         coefficient += long_task_penalty
         breakdown['long_tasks'] = round(long_task_penalty, 2)
 
         return {
             "coefficient": round(coefficient, 2),
-            "base": 5.0,
+            "base": 2.5,
             "breakdown": breakdown
         }

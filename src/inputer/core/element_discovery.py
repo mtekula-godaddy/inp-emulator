@@ -569,6 +569,17 @@ class ElementDiscoveryEngine:
                                     return true;
                                 }}
 
+                                // 10. Disclaimers and legal links (users almost never click these)
+                                const dataCy = el.getAttribute('data-cy') || '';
+                                if (dataCy === 'disclaimer-trigger' || /\\b(disclaimer|legal|terms|privacy|cookie[ -]?policy)\\b/i.test(text)) {{
+                                    return true;
+                                }}
+
+                                // 11. Account links (sign in, log in, etc.) - exclude from INP testing
+                                if (/\\b(sign in|log in|sign up|register|create account|my account|login|signin|signup)\\b/i.test(text)) {{
+                                    return true;
+                                }}
+
                                 return false;
                             }}
                         """)
@@ -660,6 +671,16 @@ class ElementDiscoveryEngine:
                     # Replace if this element has higher INP potential
                     current_score = element_groups[element_type].get('inp_potential_score', 0)
                     new_score = element.get('inp_potential_score', 0)
+
+                    # Log when we're removing "Learn More" or similar CTA buttons
+                    text = (element.get('text', '') or element.get('label', '')).lower()
+                    if 'learn more' in text or 'get started' in text or 'sign up' in text:
+                        self.logger.debug(
+                            f"Dedup: Removing '{element.get('text', '')[:40]}' (score={new_score:.1f}, Y={element.get('position', {}).get('y')}) - keeping '{element_groups[element_type].get('text', '')[:40]}' (score={current_score:.1f})",
+                            component="element_discovery",
+                            element_type=element_type
+                        )
+
                     if new_score > current_score:
                         element_groups[element_type] = element
 
@@ -693,6 +714,19 @@ class ElementDiscoveryEngine:
         role = element.get('type', '').lower()
         text = (element.get('text', '') or element.get('label', '')).lower()
         selector = element.get('selector', '').lower()
+
+        # Check for CTA text patterns first (before generic patterns)
+        # This prevents "Learn More" from being grouped with random links
+        cta_patterns = {
+            'primary_cta': ['see plans', 'get started', 'buy now', 'shop now', 'add to cart', 'checkout', 'subscribe'],
+            'secondary_cta': ['learn more', 'read more', 'find out', 'discover', 'explore'],
+            'account': ['sign in', 'log in', 'sign up', 'register', 'create account'],
+        }
+
+        for cta_type, keywords in cta_patterns.items():
+            for keyword in keywords:
+                if keyword in text:
+                    return f"{tag}-{cta_type}"
 
         # Check for common patterns
         patterns = {
@@ -775,20 +809,6 @@ class ElementDiscoveryEngine:
 
             # --- USER BEHAVIOR SCORING ---
 
-            # 1. POSITION: Elements higher on page are clicked first (above the fold priority)
-            # This is the DOMINANT factor - users see and click above-fold elements during page load
-            y_position = position.get("y", 1000)
-            if y_position < 300:  # Very top of page
-                score += 5.0
-            elif y_position < 600:  # Above fold on mobile
-                score += 4.0
-            elif y_position < 900:  # Above fold on desktop
-                score += 2.0
-            elif y_position < 1500:  # One scroll down
-                score += 0.5
-            else:  # Way down page (like disclaimers at Y=12853)
-                score -= 2.0  # Penalize heavily - users won't see until much later
-
             # 2. SIZE: Larger elements are more prominent and likely to be clicked
             width = position.get("width", 0)
             height = position.get("height", 0)
@@ -828,15 +848,9 @@ class ElementDiscoveryEngine:
                 if complex_class in class_names:
                     score += 1.5
 
-            # Bonus for data attributes (often indicate complex behavior)
-            if "data-" in data_attrs:
-                score += 1.0
-
-            # Bonus for JavaScript event indicators
-            js_indicators = ["onclick", "toggle", "trigger", "load", "submit"]
-            for indicator in js_indicators:
-                if indicator in data_attrs or indicator in class_names:
-                    score += 1.0
+            # Bonus for inline JavaScript event handlers (suggests heavy JS interaction)
+            if "onclick" in data_attrs or "onclick" in class_names:
+                score += 0.5
 
             # Bonus for dynamic discovery stage
             discovery_stage = element.get("discovery_stage", "")
@@ -851,13 +865,24 @@ class ElementDiscoveryEngine:
                 if indicator in text or indicator in class_names:
                     score -= 0.5
 
-            # Bonus for above-the-fold placement (more likely to be clicked by users)
-            position = element.get("position", {})
-            y_position = position.get("y", 0)
-            if element.get("initially_visible", False):
-                score += 2.0  # Element is in initial viewport
-            elif y_position < 1000:
-                score += 1.0  # Element is near top of page
+            # 1. POSITION: Elements higher on page are clicked first (DOMINANT FACTOR - applied last)
+            # This should override other bonuses - users don't click what they can't see
+            y_position = position.get("y", 1000)
+            if y_position < 300:  # Very top of page
+                score += 5.0
+            elif y_position < 600:  # Above fold on mobile
+                score += 4.0
+            elif y_position < 900:  # Above fold on desktop
+                score += 2.0
+            elif y_position < 1500:  # One scroll down
+                score += 0.5
+            elif y_position < 3000:  # 2-3 scrolls down - still accessible
+                score += 0.0  # No bonus but no penalty
+            elif y_position < 5000:  # Mid-page - starting to get less likely
+                score = score * 0.5  # Half score
+            else:  # Way down page (like disclaimers at Y=12853)
+                # Heavy penalty - even elements with data attributes shouldn't rank high if deep in page
+                score = score * 0.1  # Reduce to 10% of score
 
             # Ensure score is non-negative
             score = max(0.0, score)
