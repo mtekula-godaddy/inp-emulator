@@ -90,7 +90,7 @@ def cli_main(
         python main.py -u https://example.com --test-strategy priority -i 5
 
         # Multiple URLs with custom config
-        python main.py -u https://site1.com -u https://site2.com -c config/aws.yaml -v
+        python main.py -u https://site1.com -u https://site2.com -c config/config.yaml -v
     """
     async def async_main():
         # Setup logging

@@ -99,16 +99,7 @@ nano .env
 ```bash
 # Chrome configuration
 CHROME_EXECUTABLE_PATH=/usr/bin/google-chrome
-CHROME_HEADLESS=true
-
-# LLM configuration (choose one)
-# Local Ollama
-LLM_AGENT_URL=http://localhost:11434
-LLM_MODEL=llama2
-
-# AWS Bedrock
-LLM_PROVIDER=bedrock
-LLM_MODEL=anthropic.claude-3-haiku-20240307-v1:0
+CHROME_HEADLESS=false
 ```
 
 ### 3. Directory Structure
@@ -120,42 +111,18 @@ mkdir -p data/results data/screenshots data/traces logs
 
 ## 🧪 Verify Installation
 
-### Test Without LLM (Fastest)
-
 ```bash
-# Element scan mode - Tests discovered elements (default: 2 per page, excludes nav/footer/share)
-PYTHONPATH=src python3 src/inputer/testing/test_runner.py https://httpbin.org/html element_scan priority
+# Element scan mode - Tests discovered elements (default: 3 per page, excludes nav/footer/share)
+inputer-test https://httpbin.org/html element_scan priority
 
 # Test more elements
-PYTHONPATH=src python3 src/inputer/testing/test_runner.py https://httpbin.org/html element_scan priority 5
+inputer-test https://httpbin.org/html element_scan priority 5
 
 # Include header/nav elements (default: excluded)
-PYTHONPATH=src python3 src/inputer/testing/test_runner.py https://httpbin.org/html element_scan priority --include-header
+inputer-test https://httpbin.org/html element_scan priority --include-header
 
 # Test multiple URLs from a file
-PYTHONPATH=src python3 src/inputer/testing/test_runner.py urls.txt element_scan priority
-```
-
-### Test With LLM
-
-```bash
-# Start Ollama (in separate terminal)
-ollama serve
-ollama pull llama2
-
-# Run full analysis
-inputer -u https://httpbin.org/html --max-interactions 3
-```
-
-### Test AWS Bedrock
-
-```bash
-# Configure AWS credentials
-aws configure
-
-# Test with Bedrock
-export LLM_PROVIDER=bedrock
-inputer -u https://httpbin.org/html -c config/aws.yaml
+inputer-test urls.txt element_scan priority
 ```
 
 ## 🔧 Development Setup

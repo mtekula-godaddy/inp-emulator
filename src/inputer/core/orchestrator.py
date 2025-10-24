@@ -57,7 +57,7 @@ class PerformanceOrchestrator:
             self.current_session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
             # Initialize Playwright client with video recording config
-            self.playwright_client = PlaywrightClient(self.settings.mcp_server)
+            self.playwright_client = PlaywrightClient(self.settings.browser)
             self.playwright_client.session_id = self.current_session_id
             self.playwright_client.performance_config = self.settings.performance
             await self.playwright_client.initialize()

@@ -68,19 +68,12 @@ class LoggingConfig(BaseModel):
 
     level: str = Field(default="INFO", description="Log level")
     format: str = Field(default="json", description="Log format")
-    enable_metrics: bool = Field(default=True, description="Enable metrics collection")
-    metrics_port: int = Field(default=9090, description="Metrics server port")
 
 
 class Settings(BaseModel):
     """Main application settings."""
 
-    app_name: str = Field(default="inputer-performance-monitor", description="Application name")
-    app_version: str = Field(default="1.0.0", description="Application version")
-    host: str = Field(default="localhost", description="Application host")
-    port: int = Field(default=8000, description="Application port")
-
-    mcp_server: MCPServerConfig = Field(default_factory=MCPServerConfig)
+    browser: MCPServerConfig = Field(default_factory=MCPServerConfig)
     performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
     data: DataConfig = Field(default_factory=DataConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
@@ -160,7 +153,7 @@ class Settings(BaseModel):
             mcp_config["mobile_emulation"] = os.getenv("MOBILE_EMULATION").lower() == "true"
 
         if mcp_config:
-            config["mcp_server"] = mcp_config
+            config["browser"] = mcp_config
 
         # Performance settings
         perf_config = {}
@@ -194,10 +187,6 @@ class Settings(BaseModel):
             log_config["level"] = os.getenv("LOG_LEVEL")
         if os.getenv("LOG_FORMAT"):
             log_config["format"] = os.getenv("LOG_FORMAT")
-        if os.getenv("ENABLE_METRICS"):
-            log_config["enable_metrics"] = os.getenv("ENABLE_METRICS").lower() == "true"
-        if os.getenv("METRICS_PORT"):
-            log_config["metrics_port"] = int(os.getenv("METRICS_PORT"))
         if log_config:
             config["logging"] = log_config
 
@@ -210,7 +199,20 @@ class Settings(BaseModel):
             raise FileNotFoundError(f"Configuration file not found: {config_file}")
 
         with open(config_path, 'r') as f:
-            return yaml.safe_load(f) or {}
+            config = yaml.safe_load(f) or {}
+
+            # Backwards compatibility: rename mcp_server to browser
+            if 'mcp_server' in config:
+                config['browser'] = config.pop('mcp_server')
+
+            # Remove obsolete fields
+            if 'app' in config:
+                del config['app']
+            if 'logging' in config:
+                config['logging'].pop('enable_metrics', None)
+                config['logging'].pop('metrics_port', None)
+
+            return config
 
     @validator('logging')
     def validate_log_level(cls, v):

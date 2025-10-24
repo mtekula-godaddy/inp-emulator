@@ -124,7 +124,7 @@ class TestRunner:
 
         # Initialize Playwright client with video recording config and test data paths
         from inputer.interfaces.playwright_client import PlaywrightClient
-        playwright_client = PlaywrightClient(test_settings.mcp_server)
+        playwright_client = PlaywrightClient(test_settings.browser)
         playwright_client.session_id = session_id
         playwright_client.performance_config = test_settings.performance
         playwright_client.data_dir = "test_results"  # Store all test artifacts in test_results/

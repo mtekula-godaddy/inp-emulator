@@ -1,12 +1,7 @@
 # Inputer Performance Monitor Configuration
 
-app:
-  name: "inputer-performance-monitor"
-  version: "1.0.0"
-  host: "localhost"
-  port: 8000
-
-mcp_server:
+# Browser/Chrome settings
+browser:
   port: 3001
   executable_path: null  # Will use system Chrome
   headless: false  # GoDaddy blocks headless mode even with anti-detection
@@ -41,5 +36,3 @@ data:
 logging:
   level: "INFO"
   format: "json"
-  enable_metrics: true
-  metrics_port: 9090
