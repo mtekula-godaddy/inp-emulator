@@ -1,5 +1,5 @@
 {
-  "name": "inputer-performance-monitor",
+  "name": "inp-emulator",
   "version": "1.0.0",
   "description": "Automated INP and performance monitoring using Chrome DevTools MCP",
   "main": "index.js",
@@ -18,7 +18,7 @@
     "automation",
     "testing"
   ],
-  "author": "Inputer Performance Monitor",
+  "author": "INP Emulator",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",

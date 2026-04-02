@@ -1,4 +1,4 @@
-# Installation Guide - Inputer Performance Monitor
+# Installation Guide - INP Emulator
 
 ## 🚀 Quick Install with uv (Recommended)
 
@@ -14,7 +14,7 @@ We use [uv](https://docs.astral.sh/uv/) - the fast Python package manager for op
 ```bash
 # Clone and setup everything
 git clone <repository-url>
-cd inputer
+cd inp-emulator
 ./scripts/start.sh
 ```
 
@@ -113,16 +113,16 @@ mkdir -p data/results data/screenshots data/traces logs
 
 ```bash
 # Element scan mode - Tests discovered elements (default: 3 per page, excludes nav/footer/share)
-inputer-test https://httpbin.org/html element_scan priority
+inp-emulator-test https://httpbin.org/html element_scan priority
 
 # Test more elements
-inputer-test https://httpbin.org/html element_scan priority 5
+inp-emulator-test https://httpbin.org/html element_scan priority 5
 
 # Include header/nav elements (default: excluded)
-inputer-test https://httpbin.org/html element_scan priority --include-header
+inp-emulator-test https://httpbin.org/html element_scan priority --include-header
 
 # Test multiple URLs from a file
-inputer-test urls.txt element_scan priority
+inp-emulator-test urls.txt element_scan priority
 ```
 
 ## 🔧 Development Setup
@@ -141,19 +141,19 @@ pre-commit install
 
 ```bash
 # Code formatting
-black src/inputer/
-isort src/inputer/
+black src/inp_emulator/
+isort src/inp_emulator/
 
 # Type checking
-mypy src/inputer/
+mypy src/inp_emulator/
 
 # Linting
-flake8 src/inputer/
-ruff check src/inputer/
+flake8 src/inp_emulator/
+ruff check src/inp_emulator/
 
 # Testing
 pytest
-pytest --cov=src/inputer/
+pytest --cov=src/inp_emulator/
 
 # Run all quality checks
 pre-commit run --all-files
@@ -304,27 +304,27 @@ uv sync --frozen
 
 ```bash
 # From pyproject.toml [project.scripts]
-inputer                    # Main CLI command
-inputer-test              # Test runner CLI
+inp-emulator                    # Main CLI command
+inp-emulator-test              # Test runner CLI
 
 # Usage examples
-inputer -u https://example.com --test-mode mock
-inputer-test https://example.com priority
+inp-emulator -u https://example.com --test-mode mock
+inp-emulator-test https://example.com priority
 ```
 
 ### Development Scripts
 
 ```bash
 # Formatting and linting
-uv run black src/inputer/
-uv run ruff check src/inputer/
+uv run black src/inp_emulator/
+uv run ruff check src/inp_emulator/
 
 # Testing
 uv run pytest
-uv run pytest --cov=src/inputer/
+uv run pytest --cov=src/inp_emulator/
 
 # Type checking
-uv run mypy src/inputer/
+uv run mypy src/inp_emulator/
 ```
 
 ## 🎯 Next Steps

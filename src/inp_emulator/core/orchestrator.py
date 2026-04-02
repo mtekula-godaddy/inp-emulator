@@ -10,12 +10,12 @@ from typing import Dict, List, Optional, Any
 
 import structlog
 
-from inputer.config.settings import Settings
-from inputer.interfaces.playwright_client import PlaywrightClient
-from inputer.core.element_discovery import ElementDiscoveryEngine
-from inputer.core.interaction_engine import UserInteractionEngine
-from inputer.core.performance_analyzer import PerformanceAnalyzer
-from inputer.utils.data_export import DataExporter
+from inp_emulator.config.settings import Settings
+from inp_emulator.interfaces.playwright_client import PlaywrightClient
+from inp_emulator.core.element_discovery import ElementDiscoveryEngine
+from inp_emulator.core.interaction_engine import UserInteractionEngine
+from inp_emulator.core.performance_analyzer import PerformanceAnalyzer
+from inp_emulator.utils.data_export import DataExporter
 
 
 logger = structlog.get_logger(__name__)

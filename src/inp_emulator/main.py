@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Inputer Performance Monitor - Main Orchestrator
+INP Emulator - Main Orchestrator
 Automated INP hunting using Chrome DevTools and systematic element testing.
 """
 
@@ -17,9 +17,9 @@ from rich.logging import RichHandler
 # Add src/python to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from inputer.config.settings import Settings
-from inputer.utils.logger import setup_logging
-from inputer.testing.test_runner import run_performance_test
+from inp_emulator.config.settings import Settings
+from inp_emulator.utils.logger import setup_logging
+from inp_emulator.testing.test_runner import run_performance_test
 
 
 console = Console()
@@ -80,7 +80,7 @@ def cli_main(
     test_strategy: str
 ):
     """
-    Inputer Performance Monitor - Automated INP hunting using Chrome DevTools
+    INP Emulator - Automated INP hunting using Chrome DevTools
 
     Examples:
         # Element scan mode (tests all elements systematically)
@@ -98,7 +98,7 @@ def cli_main(
         setup_logging(log_level)
         logger = logging.getLogger(__name__)
 
-        console.print("🚀 [bold blue]Inputer Performance Monitor[/bold blue]")
+        console.print("🚀 [bold blue]INP Emulator[/bold blue]")
         console.print(f"📋 Analyzing {len(urls)} URL(s)")
         console.print(f"🧪 Test mode: {test_mode}")
         console.print(f"📊 Test strategy: {test_strategy}")

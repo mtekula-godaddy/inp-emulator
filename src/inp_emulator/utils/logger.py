@@ -1,5 +1,5 @@
 """
-Logging utilities for Inputer Performance Monitor.
+Logging utilities for INP Emulator.
 """
 
 import logging

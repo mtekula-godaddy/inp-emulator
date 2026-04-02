@@ -10,9 +10,9 @@ from typing import Dict, List, Optional
 
 import structlog
 
-from inputer.config.settings import Settings
-from inputer.core.orchestrator import PerformanceOrchestrator
-from inputer.core.page_analyzer import PageAnalyzer
+from inp_emulator.config.settings import Settings
+from inp_emulator.core.orchestrator import PerformanceOrchestrator
+from inp_emulator.core.page_analyzer import PageAnalyzer
 
 
 logger = structlog.get_logger(__name__)
@@ -123,7 +123,7 @@ class TestRunner:
         orchestrator.current_session_id = session_id
 
         # Initialize Playwright client with video recording config and test data paths
-        from inputer.interfaces.playwright_client import PlaywrightClient
+        from inp_emulator.interfaces.playwright_client import PlaywrightClient
         playwright_client = PlaywrightClient(test_settings.browser)
         playwright_client.session_id = session_id
         playwright_client.performance_config = test_settings.performance
@@ -132,14 +132,14 @@ class TestRunner:
         orchestrator.playwright_client = playwright_client
 
         # Initialize element discovery with Playwright
-        from inputer.core.element_discovery import ElementDiscoveryEngine
+        from inp_emulator.core.element_discovery import ElementDiscoveryEngine
         orchestrator.element_discovery = ElementDiscoveryEngine(
             mcp_client=playwright_client,
             settings=self.settings.performance
         )
 
         # Initialize interaction engine with Playwright
-        from inputer.core.interaction_engine import UserInteractionEngine
+        from inp_emulator.core.interaction_engine import UserInteractionEngine
         orchestrator.interaction_engine = UserInteractionEngine(
             mcp_client=playwright_client,
             settings=self.settings.performance,
@@ -147,13 +147,13 @@ class TestRunner:
         )
 
         # Initialize performance analyzer with Playwright
-        from inputer.core.performance_analyzer import PerformanceAnalyzer
+        from inp_emulator.core.performance_analyzer import PerformanceAnalyzer
         orchestrator.performance_analyzer = PerformanceAnalyzer(
             mcp_client=playwright_client
         )
 
         # Initialize data exporter
-        from inputer.utils.data_export import DataExporter
+        from inp_emulator.utils.data_export import DataExporter
         orchestrator.data_exporter = DataExporter(self.settings.data)
 
         # Mark as initialized to skip the normal initialization
@@ -394,7 +394,7 @@ class TestRunner:
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Use orchestrator's data exporter
-        from inputer.utils.data_export import DataExporter
+        from inp_emulator.utils.data_export import DataExporter
         exporter = DataExporter(self.settings.data)
 
         # Export results and get actual report path
@@ -470,27 +470,30 @@ async def run_performance_test(
     print(f"Total Interactions: {summary['total_interactions']}")
 
     if summary["worst_inp_overall"]:
-        # For single URL, show element instead of URL
+        # For single URL, show all tested elements with their INP scores
         if summary['total_urls'] == 1:
-            # Get element label from results
-            worst_element_label = None
+            print(f"\nElement INP Results:")
             for url, result in test_results['results'].items():
-                if result.get('worst_inp') == summary['worst_inp_overall']:
-                    # Find the interaction with this INP score
-                    for interaction in result.get('interactions', []):
-                        inp_score = interaction.get('performance', {}).get('inp', {}).get('estimated_score')
-                        if inp_score == summary['worst_inp_overall']:
-                            element = interaction.get('element', {})
-                            worst_element_label = element.get('label') or element.get('text', 'Unknown element')
-                            break
-                    break
+                interactions = result.get('interactions', [])
+                for i, interaction in enumerate(interactions, 1):
+                    element = interaction.get('element', {})
+                    element_label = element.get('label') or element.get('text', 'Unknown element')
+                    inp_score = interaction.get('performance', {}).get('inp', {}).get('estimated_score')
 
-            if worst_element_label:
-                print(f"Worst INP: {summary['worst_inp_overall']}ms on '{worst_element_label[:60]}'")
-            else:
-                print(f"Worst INP: {summary['worst_inp_overall']}ms")
+                    if inp_score is not None:
+                        # Classify INP (Good < 200ms, Needs Improvement < 500ms, Poor >= 500ms)
+                        if inp_score < 200:
+                            status = "✓ Good"
+                        elif inp_score < 500:
+                            status = "⚠ Needs Improvement"
+                        else:
+                            status = "✗ Poor"
+
+                        print(f"  {i}. {element_label[:50]:<50} {inp_score:>6.1f}ms  {status}")
+                    else:
+                        print(f"  {i}. {element_label[:50]:<50} {'Failed':>6}  ✗")
         else:
-            # For multiple URLs, show URL
+            # For multiple URLs, show worst URL
             print(f"Worst INP: {summary['worst_inp_overall']}ms on {summary['worst_url']}")
 
     print(f"\n📄 Report saved to: {test_results['report_path']}")

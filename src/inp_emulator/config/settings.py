@@ -1,5 +1,5 @@
 """
-Configuration management for Inputer Performance Monitor.
+Configuration management for INP Emulator.
 """
 
 import os

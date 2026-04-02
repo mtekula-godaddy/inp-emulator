@@ -12,7 +12,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
 import structlog
 
-from inputer.config.settings import MCPServerConfig
+from inp_emulator.config.settings import MCPServerConfig
 
 
 logger = structlog.get_logger(__name__)

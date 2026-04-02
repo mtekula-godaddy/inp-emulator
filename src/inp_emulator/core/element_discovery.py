@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Set
 
 import structlog
 
-from inputer.config.settings import PerformanceConfig
+from inp_emulator.config.settings import PerformanceConfig
 
 
 logger = structlog.get_logger(__name__)

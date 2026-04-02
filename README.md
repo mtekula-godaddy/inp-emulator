@@ -1,4 +1,4 @@
-# Inputer
+# INP Emulator
 
 A browser automation tool for finding likely INP culprits.
 
@@ -6,7 +6,7 @@ A browser automation tool for finding likely INP culprits.
 
 INP (Interaction to Next Paint) is a Core Web Vitals metric that measures how quickly a page responds to user interactions. High INP scores indicate poor user experience and can negatively impact Google search rankings. Existing tools like Lighthouse do not simulate actual user behavior, making INP issues difficult to identify.
 
-Inputer finds interactive elements on web pages, clicks/taps them, measures INP, and reports which elements cause delays. It applies a coefficient to estimate real-world INP from automation measurements (typical range: 2.5-4.0x based on page complexity).
+INP Emulator finds interactive elements on web pages, clicks/taps them, measures INP, and reports which elements cause delays. It applies a coefficient to estimate real-world INP from automation measurements (typical range: 2.5-4.0x based on page complexity).
 
 Core capabilities:
 - Finds interactive elements during page rendering (buttons, links, accordions, expandable lists)
@@ -55,7 +55,7 @@ Requirements:
 Installation:
 ```bash
 git clone <repository-url>
-cd inputer
+cd inp-emulator
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 source .venv/bin/activate
@@ -67,22 +67,22 @@ cp .env.example .env
 
 Basic command:
 ```bash
-inputer-test https://example.com element_scan priority
+inp-emulator-test https://example.com element_scan priority
 ```
 
 Test 5 elements instead of default 3:
 ```bash
-inputer-test https://example.com element_scan priority 5
+inp-emulator-test https://example.com element_scan priority 5
 ```
 
 Include navigation/header elements:
 ```bash
-inputer-test https://example.com element_scan priority --include-header
+inp-emulator-test https://example.com element_scan priority --include-header
 ```
 
 Test multiple URLs from a file:
 ```bash
-inputer-test urls.txt element_scan priority
+inp-emulator-test urls.txt element_scan priority
 ```
 
 Selection strategies:
@@ -114,7 +114,7 @@ URLs Tested: 1/1
 Total Interactions: 3
 Worst INP: 847ms on 'See Plans and Pricing'
 
-Report saved to: test_results/inputer_report_20251022_110833.json
+Report saved to: test_results/inp_emulator_report_20251022_110833.json
 ```
 
 Screenshots saved to `data/screenshots/{session_id}/` with before/after state for each interaction.
@@ -146,5 +146,5 @@ export CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 Enable debug output:
 ```bash
-python src/inputer/main.py --verbose -u https://example.com
+python src/inp_emulator/main.py --verbose -u https://example.com
 ```

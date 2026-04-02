@@ -13,7 +13,7 @@ import statistics
 import pandas as pd
 import structlog
 
-from inputer.config.settings import DataConfig
+from inp_emulator.config.settings import DataConfig
 
 
 logger = structlog.get_logger(__name__)
@@ -58,7 +58,7 @@ class DataExporter:
         output_path.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        base_filename = f"inputer_report_{timestamp}"
+        base_filename = f"inp_emulator_report_{timestamp}"
 
         self.logger.info("Exporting results", output_dir=str(output_path))
 
@@ -501,7 +501,7 @@ class DataExporter:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inputer Performance Report</title>
+    <title>INP Emulator Performance Report</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 20px; }}
         .header {{ background-color: #f4f4f4; padding: 20px; border-radius: 5px; }}
@@ -520,7 +520,7 @@ class DataExporter:
 </head>
 <body>
     <div class="header">
-        <h1>🎯 Inputer Performance Report</h1>
+        <h1>🎯 INP Emulator Performance Report</h1>
         <p>Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
     </div>
 
@@ -607,7 +607,7 @@ class DataExporter:
         try:
             summary = self._generate_summary_stats(results)
 
-            text = f"""# Inputer Performance Monitor - Analysis Summary
+            text = f"""# INP Emulator - Analysis Summary
 
 **Report Generated:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
