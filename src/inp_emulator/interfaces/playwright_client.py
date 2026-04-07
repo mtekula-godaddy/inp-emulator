@@ -1,11 +1,16 @@
 """
 Playwright Client for browser automation and performance monitoring.
 
-This module provides an interface to control a browser using Playwright
-for web performance testing and INP measurement.
+Launches system Chrome via CDP (Chrome DevTools Protocol) to avoid
+bot detection that targets Playwright's bundled Chromium.
 """
 
 import asyncio
+import platform
+import shutil
+import subprocess
+import tempfile
+import time
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 
@@ -17,11 +22,53 @@ from inp_emulator.config.settings import MCPServerConfig
 
 logger = structlog.get_logger(__name__)
 
+CDP_PORT = 9222
+
+
+def _find_chrome() -> str:
+    """Find the system Chrome executable."""
+    system = platform.system()
+
+    if system == "Darwin":
+        candidates = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        ]
+    elif system == "Linux":
+        candidates = [
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "chromium-browser",
+        ]
+    elif system == "Windows":
+        candidates = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        ]
+    else:
+        candidates = []
+
+    for candidate in candidates:
+        if Path(candidate).is_absolute():
+            if Path(candidate).exists():
+                return candidate
+        else:
+            found = shutil.which(candidate)
+            if found:
+                return found
+
+    raise RuntimeError(
+        "Could not find Chrome. Install Google Chrome or set CHROME_EXECUTABLE_PATH in .env"
+    )
+
 
 class PlaywrightClient:
     """
     Client for browser automation using Playwright.
-    Provides similar interface to the old MCP client for easy migration.
+
+    Connects to system Chrome via CDP to bypass bot detection that
+    fingerprints Playwright's bundled Chromium.
     """
 
     def __init__(self, config: MCPServerConfig):
@@ -35,6 +82,10 @@ class PlaywrightClient:
         self.context: Optional[BrowserContext] = None
         self.page: Optional[Page] = None
 
+        # Chrome subprocess
+        self._chrome_process: Optional[subprocess.Popen] = None
+        self._chrome_user_data_dir: Optional[str] = None
+
         # Session state
         self.current_browser_session: Optional[str] = None
         self.inp_entries: List[Dict[str, Any]] = []
@@ -45,110 +96,94 @@ class PlaywrightClient:
         self.data_dir: str = "data"  # Default to data/, can be overridden for tests
 
     async def initialize(self) -> None:
-        """Initialize the Playwright browser."""
+        """Launch system Chrome and connect via CDP."""
         self.logger.info("Initializing Playwright client")
 
         try:
-            # Start Playwright
-            self.playwright = await async_playwright().start()
+            # Find Chrome
+            chrome_path = self.config.executable_path or _find_chrome()
+            self.logger.info("Using Chrome", path=chrome_path)
 
-            # Launch browser with enhanced anti-detection for headless mode
-            launch_args = [
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
+            # Temp profile so we don't interfere with user's browser
+            self._chrome_user_data_dir = tempfile.mkdtemp(prefix="inp-emulator-")
+
+            # Build Chrome launch args
+            chrome_args = [
+                chrome_path,
+                f'--remote-debugging-port={CDP_PORT}',
+                f'--user-data-dir={self._chrome_user_data_dir}',
                 '--no-first-run',
                 '--no-default-browser-check',
+                '--disable-default-apps',
+                '--disable-popup-blocking',
+                '--disable-translate',
+                '--disable-background-timer-throttling',
+                '--disable-renderer-backgrounding',
+                '--disable-backgrounding-occluded-windows',
             ]
 
-            # Additional headless-specific args for better stealth
             if self.config.headless:
-                launch_args.extend([
-                    '--window-size=1920,1080',
-                    '--disable-features=IsolateOrigins,site-per-process',
-                ])
+                chrome_args.append('--headless=new')
 
-            self.browser = await self.playwright.chromium.launch(
-                headless=self.config.headless,
-                args=launch_args
+            # Set viewport via window size
+            if hasattr(self.config, 'mobile_emulation') and self.config.mobile_emulation:
+                chrome_args.append(
+                    f'--window-size={self.config.viewport_width},{self.config.viewport_height}'
+                )
+
+            # Launch Chrome
+            self._chrome_process = subprocess.Popen(
+                chrome_args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
 
-            # Create context with mobile emulation if configured
-            viewport = None
-            user_agent = None
-            has_touch = False
+            # Wait for CDP to be ready
+            await self._wait_for_cdp()
 
-            if hasattr(self.config, 'mobile_emulation') and self.config.mobile_emulation:
-                # Mobile emulation (Pixel 5)
-                viewport = {'width': 393, 'height': 851}
-                user_agent = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
-                device_scale_factor = 1.0  # Use 1:1 pixel ratio for screenshots
-                has_touch = True  # Enable touch events for mobile
+            # Connect Playwright via CDP
+            self.playwright = await async_playwright().start()
+            self.browser = await self.playwright.chromium.connect_over_cdp(
+                f'http://localhost:{CDP_PORT}'
+            )
+
+            # Get the default context created by Chrome
+            contexts = self.browser.contexts
+            if contexts:
+                self.context = contexts[0]
             else:
-                device_scale_factor = 1.0
+                self.context = await self.browser.new_context()
+
+            # Get or create a page
+            pages = self.context.pages
+            if pages:
+                self.page = pages[0]
+            else:
+                self.page = await self.context.new_page()
+
+            # Apply mobile emulation via CDP
+            if hasattr(self.config, 'mobile_emulation') and self.config.mobile_emulation:
+                cdp = await self.context.new_cdp_session(self.page)
+                await cdp.send('Emulation.setDeviceMetricsOverride', {
+                    'width': self.config.viewport_width,
+                    'height': self.config.viewport_height,
+                    'deviceScaleFactor': 1.0,
+                    'mobile': True,
+                })
+                await cdp.send('Emulation.setTouchEmulationEnabled', {
+                    'enabled': True,
+                })
+                await cdp.send('Emulation.setUserAgentOverride', {
+                    'userAgent': self.config.user_agent,
+                })
 
             # Set up video recording if enabled
-            record_video_dir = None
-            record_video_size = None
             if (self.performance_config and
                 hasattr(self.performance_config, 'video_capture') and
                 self.performance_config.video_capture):
-                record_video_dir = f"{self.data_dir}/videos/{self.session_id or 'default'}"
-                if viewport:
-                    record_video_size = {'width': viewport['width'], 'height': viewport['height']}
-                self.logger.info("Video recording enabled", dir=record_video_dir)
-
-            self.context = await self.browser.new_context(
-                viewport=viewport,
-                user_agent=user_agent,
-                device_scale_factor=device_scale_factor,
-                has_touch=has_touch,
-                record_video_dir=record_video_dir,
-                record_video_size=record_video_size
-                # NOTE: X-Gd-Crawler header removed - it triggers CORS preflight failures
-                # that block all JS/CSS resources from loading (img6.wsimg.com CDN rejects OPTIONS requests)
-                # Screaming Frog works because it's not a browser and doesn't enforce CORS
-            )
-
-            # Enhanced anti-detection script - mimics Screaming Frog's approach
-            await self.context.add_init_script("""
-                // Remove webdriver flag
-                Object.defineProperty(navigator, 'webdriver', {
-                    get: () => undefined
-                });
-
-                // Override the permissions API to hide automation
-                const originalQuery = window.navigator.permissions.query;
-                window.navigator.permissions.query = (parameters) => (
-                    parameters.name === 'notifications' ?
-                        Promise.resolve({ state: Notification.permission }) :
-                        originalQuery(parameters)
-                );
-
-                // Override plugins and mimeTypes
-                Object.defineProperty(navigator, 'plugins', {
-                    get: () => [1, 2, 3, 4, 5]
-                });
-
-                Object.defineProperty(navigator, 'languages', {
-                    get: () => ['en-US', 'en']
-                });
-
-                // Hide headless browser specific properties
-                Object.defineProperty(navigator, 'platform', {
-                    get: () => 'Linux armv81'
-                });
-
-                // Chrome runtime
-                window.chrome = {
-                    runtime: {}
-                };
-            """)
-
-            # RAF-based INP measurement (industry standard for automation)
-            # This is the recommended approach per web.dev articles on measuring INP with automation
-
-            # Create page
-            self.page = await self.context.new_page()
+                video_dir = f"{self.data_dir}/videos/{self.session_id or 'default'}"
+                Path(video_dir).mkdir(parents=True, exist_ok=True)
+                self.logger.info("Video recording enabled", dir=video_dir)
 
             # Set up network throttling if configured
             await self._setup_network_throttling()
@@ -164,6 +199,26 @@ class PlaywrightClient:
             self.logger.error("Failed to initialize Playwright client", error=str(e))
             await self.cleanup()
             raise
+
+    async def _wait_for_cdp(self, timeout: float = 10.0) -> None:
+        """Wait for Chrome's CDP endpoint to become available."""
+        import urllib.request
+        import urllib.error
+
+        deadline = asyncio.get_event_loop().time() + timeout
+        while asyncio.get_event_loop().time() < deadline:
+            try:
+                req = urllib.request.urlopen(
+                    f'http://localhost:{CDP_PORT}/json/version',
+                    timeout=2
+                )
+                if req.status == 200:
+                    return
+            except (urllib.error.URLError, OSError):
+                pass
+            await asyncio.sleep(0.3)
+
+        raise RuntimeError(f"Chrome CDP did not become available within {timeout}s")
 
     async def _setup_inp_monitoring(self) -> None:
         """Set up INP (Interaction to Next Paint) monitoring.
@@ -259,23 +314,21 @@ class PlaywrightClient:
         return await self.navigate_to_page(url, **kwargs)
 
     async def navigate_to_page(self, url: str, wait_until: str = 'load') -> Dict[str, Any]:
-        """Navigate to a specific URL with cache busting."""
+        """Navigate to a specific URL, waiting for page content to render."""
         self.logger.info("Navigating to page", url=url)
 
         try:
-            # Set no-cache headers to ensure fresh page load
-            await self.context.route("**/*", lambda route: route.continue_(headers={
-                **route.request.headers,
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache",
-                "Expires": "0"
-            }))
-
-            # Wait for DOM to be ready - users can start interacting as soon as elements are visible
             response = await self.page.goto(url, wait_until='domcontentloaded', timeout=30000)
 
-            # Unroute to avoid affecting subsequent navigations
-            await self.context.unroute("**/*")
+            # Wait for real page content to appear (handles JS challenge pages)
+            # Bot protection pages serve an empty body, then redirect via JS
+            try:
+                await self.page.wait_for_function(
+                    '() => document.title.length > 0 && document.body && document.body.innerText.trim().length > 50',
+                    timeout=15000
+                )
+            except Exception:
+                self.logger.warning("Page content did not fully render within timeout", url=url)
 
             self.logger.info("Page navigation complete", url=url, status=response.status if response else None)
             return {
@@ -631,8 +684,6 @@ class PlaywrightClient:
             Dict with success status and timing info
         """
         try:
-            import time
-
             # Check if we're in mobile mode
             is_mobile = hasattr(self.config, 'mobile_emulation') and self.config.mobile_emulation
 
@@ -750,7 +801,11 @@ class PlaywrightClient:
 
             # Perform Playwright's real browser click (generates trusted events)
             if is_mobile:
-                await self.page.tap(selector, timeout=5000)
+                try:
+                    await self.page.tap(selector, timeout=5000)
+                except Exception:
+                    # CDP-connected contexts don't support tap — fall back to click
+                    await self.page.click(selector, timeout=5000)
             else:
                 await self.page.click(selector, timeout=5000)
 
@@ -982,7 +1037,6 @@ class PlaywrightClient:
             INP entry dict if found, None if no new entry after timeout
         """
         try:
-            import asyncio
             start_time = asyncio.get_event_loop().time()
             check_interval = 0.05  # Check every 50ms
 
@@ -1081,42 +1135,59 @@ class PlaywrightClient:
             raise
 
     async def cleanup(self) -> None:
-        """Clean up resources."""
+        """Clean up Playwright connection and Chrome subprocess."""
         self.logger.info("Cleaning up Playwright client")
 
         try:
             if self.page and not self.page.is_closed():
-                # Get video path before closing (if recording)
-                video_path = None
                 try:
-                    video = self.page.video
-                    if video:
-                        await self.page.close()
-                        video_path = await video.path()
-                        self.logger.info("Video recording saved", path=video_path)
-                    else:
-                        await self.page.close()
-                except Exception as e:
-                    self.logger.warning("Could not retrieve video path", error=str(e))
-                    if not self.page.is_closed():
-                        await self.page.close()
+                    await self.page.close()
+                except Exception:
+                    pass
 
             if self.context:
-                await self.context.close()
+                try:
+                    await self.context.close()
+                except Exception:
+                    pass
 
             if self.browser:
-                await self.browser.close()
+                try:
+                    await self.browser.close()
+                except Exception:
+                    pass
 
             if self.playwright:
-                await self.playwright.stop()
+                try:
+                    await self.playwright.stop()
+                except Exception:
+                    pass
+
+            # Terminate Chrome subprocess
+            if self._chrome_process:
+                try:
+                    self._chrome_process.terminate()
+                    self._chrome_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self._chrome_process.kill()
+                except Exception:
+                    pass
+
+            # Clean up temp user data dir
+            if self._chrome_user_data_dir:
+                import shutil as _shutil
+                try:
+                    _shutil.rmtree(self._chrome_user_data_dir, ignore_errors=True)
+                except Exception:
+                    pass
 
             self.logger.info("Playwright client cleanup complete")
 
         except Exception as e:
             self.logger.error("Error during cleanup", error=str(e))
-            # Force cleanup even on error
-            try:
-                if self.playwright:
-                    await self.playwright.stop()
-            except:
-                pass
+            # Force cleanup
+            if self._chrome_process:
+                try:
+                    self._chrome_process.kill()
+                except Exception:
+                    pass

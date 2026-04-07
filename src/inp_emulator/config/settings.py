@@ -26,8 +26,8 @@ class MCPServerConfig(BaseModel):
     viewport_height: int = Field(default=932, description="Viewport height (iPhone 16 Pro Max: 932px)")
     device_scale_factor: float = Field(default=3.0, description="Device pixel ratio (iPhone 16 Pro Max: 3x)")
     user_agent: str = Field(
-        default="Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.85 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-        description="User agent string for Googlebot Smartphone"
+        default="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36",
+        description="User agent string"
     )
     mobile_emulation: bool = Field(default=True, description="Enable mobile device emulation")
     network_throttling: Optional[str] = Field(default=None, description="Network throttling profile (Fast 3G, Slow 4G, 3G, or None)")

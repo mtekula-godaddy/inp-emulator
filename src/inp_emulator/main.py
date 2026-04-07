@@ -56,38 +56,22 @@ console = Console()
     is_flag=True,
     help="Enable verbose logging"
 )
-@click.option(
-    "--test-mode",
-    "-t",
-    type=click.Choice(["mock", "deterministic", "element_scan"]),
-    default="element_scan",
-    help="Test mode (mock, deterministic, element_scan)"
-)
-@click.option(
-    "--test-strategy",
-    "-s",
-    type=click.Choice(["priority", "sequential", "random", "problematic"]),
-    default="priority",
-    help="Test strategy (priority, sequential, random, problematic)"
-)
 def cli_main(
     urls: tuple,
     max_interactions: int,
     output_dir: str,
     config_file: Optional[str],
-    verbose: bool,
-    test_mode: str,
-    test_strategy: str
+    verbose: bool
 ):
     """
     INP Emulator - Automated INP hunting using Chrome DevTools
 
     Examples:
-        # Element scan mode (tests all elements systematically)
+        # Test a single URL
         python main.py -u https://example.com
 
-        # Priority strategy with custom interactions
-        python main.py -u https://example.com --test-strategy priority -i 5
+        # Test with more interactions
+        python main.py -u https://example.com -i 5
 
         # Multiple URLs with custom config
         python main.py -u https://site1.com -u https://site2.com -c config/config.yaml -v
@@ -100,15 +84,11 @@ def cli_main(
 
         console.print("🚀 [bold blue]INP Emulator[/bold blue]")
         console.print(f"📋 Analyzing {len(urls)} URL(s)")
-        console.print(f"🧪 Test mode: {test_mode}")
-        console.print(f"📊 Test strategy: {test_strategy}")
 
         try:
             # Run performance test
             test_results = await run_performance_test(
                 urls=list(urls),
-                test_mode=test_mode,
-                strategy=test_strategy,
                 max_interactions=max_interactions,
                 config_file=config_file
             )

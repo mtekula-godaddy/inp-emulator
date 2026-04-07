@@ -20,40 +20,34 @@ logger = structlog.get_logger(__name__)
 
 class TestRunner:
     """
-    Test runner for performance analysis without LLM dependency.
+    Test runner for INP performance analysis.
 
-    Supports different testing modes:
-    - mock: Uses mock LLM with various strategies
-    - deterministic: Uses predefined action sequences
-    - element_scan: Tests all discovered elements systematically
+    Systematically discovers and tests interactive elements on web pages,
+    measuring INP metrics for each interaction.
     """
 
-    def __init__(self, settings: Settings, test_mode: str = "mock"):
+    def __init__(self, settings: Settings):
         """
         Initialize test runner.
 
         Args:
             settings: Application settings
-            test_mode: Test mode ("mock", "deterministic", "element_scan")
         """
         self.settings = settings
-        self.test_mode = test_mode
-        self.logger = logger.bind(component="test_runner", mode=test_mode)
+        self.logger = logger.bind(component="test_runner")
 
     async def run_test_analysis(
         self,
         urls: List[str],
-        strategy: str = "priority",
         max_interactions: int = 10,
         output_dir: str = "./test_results",
         skip_header: bool = True
     ) -> Dict[str, any]:
         """
-        Run performance analysis in test mode.
+        Run INP performance analysis on the given URLs.
 
         Args:
             urls: URLs to analyze
-            strategy: Testing strategy for mock LLM
             max_interactions: Maximum interactions per page
             output_dir: Output directory for results
             skip_header: Exclude elements within header tags (default: True)
@@ -63,13 +57,10 @@ class TestRunner:
         """
         self.logger.info(
             "Starting test analysis",
-            urls=urls,
-            strategy=strategy,
-            mode=self.test_mode
+            urls=urls
         )
 
-        # Create custom orchestrator with mock LLM
-        orchestrator = await self._create_test_orchestrator(strategy)
+        orchestrator = await self._create_test_orchestrator()
 
         try:
             await orchestrator.initialize()
@@ -79,10 +70,7 @@ class TestRunner:
                 self.logger.info("Testing URL", url=url)
 
                 try:
-                    if self.test_mode == "element_scan":
-                        result = await self._run_element_scan(orchestrator, url, max_interactions, skip_header)
-                    else:
-                        result = await orchestrator.analyze_page(url, max_interactions)
+                    result = await self._run_element_scan(orchestrator, url, max_interactions, skip_header)
 
                     results[url] = result
                     self.logger.info(
@@ -96,20 +84,18 @@ class TestRunner:
                     results[url] = {"error": str(e)}
 
             # Generate test report
-            report_path = await self._generate_test_report(results, output_dir, strategy)
+            report_path = await self._generate_test_report(results, output_dir)
 
             return {
                 "results": results,
                 "report_path": report_path,
-                "test_mode": self.test_mode,
-                "strategy": strategy,
                 "summary": self._generate_test_summary(results)
             }
 
         finally:
             await orchestrator.cleanup()
 
-    async def _create_test_orchestrator(self, strategy: str) -> PerformanceOrchestrator:
+    async def _create_test_orchestrator(self) -> PerformanceOrchestrator:
         """Create orchestrator with Playwright client."""
 
         # Create modified orchestrator with test-specific data directory
@@ -386,8 +372,7 @@ class TestRunner:
     async def _generate_test_report(
         self,
         results: Dict[str, any],
-        output_dir: str,
-        strategy: str
+        output_dir: str
     ) -> Path:
         """Generate test report."""
         output_path = Path(output_dir)
@@ -430,20 +415,16 @@ class TestRunner:
 # CLI function for running tests
 async def run_performance_test(
     urls: List[str],
-    test_mode: str = "mock",
-    strategy: str = "priority",
     max_interactions: int = 3,
     config_file: Optional[str] = None,
     skip_header: bool = True
 ):
     """
-    CLI function to run performance tests without LLM.
+    CLI function to run INP performance tests.
 
     Args:
         urls: URLs to test
-        test_mode: Test mode ("mock", "deterministic", "element_scan")
-        strategy: Strategy for mock LLM
-        max_interactions: Maximum interactions per page (default: 2)
+        max_interactions: Maximum interactions per page (default: 3)
         config_file: Optional configuration file
         skip_header: Exclude elements within header tags (default: True)
     """
@@ -451,12 +432,11 @@ async def run_performance_test(
     settings = Settings(config_file=config_file)
 
     # Create test runner
-    runner = TestRunner(settings, test_mode=test_mode)
+    runner = TestRunner(settings)
 
     # Run tests
     test_results = await runner.run_test_analysis(
         urls=urls,
-        strategy=strategy,
         max_interactions=max_interactions,
         skip_header=skip_header
     )
@@ -464,8 +444,6 @@ async def run_performance_test(
     # Print summary
     summary = test_results["summary"]
     print(f"\n🧪 Test Results Summary")
-    print(f"Test Mode: {test_mode}")
-    print(f"Strategy: {strategy}")
     print(f"URLs Tested: {summary['successful_urls']}/{summary['total_urls']}")
     print(f"Total Interactions: {summary['total_interactions']}")
 
@@ -512,28 +490,24 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Test single URL (skip header, 2 elements)
-  python test_runner.py https://example.com element_scan priority
+  # Test single URL (skip header, 3 elements)
+  inp-emulator-test https://example.com
 
   # Test single URL with 5 elements
-  python test_runner.py https://example.com element_scan priority 5
+  inp-emulator-test https://example.com 5
 
   # Test single URL, include header elements
-  python test_runner.py https://example.com element_scan priority --include-header
+  inp-emulator-test https://example.com --include-header
 
   # Test multiple URLs from file
-  python test_runner.py urls.txt element_scan priority
+  inp-emulator-test urls.txt
 
   # Test file with 5 elements per URL, include headers
-  python test_runner.py urls.txt element_scan priority 5 --include-header
+  inp-emulator-test urls.txt 5 --include-header
         """
     )
 
     parser.add_argument("url_or_file", help="URL to test or path to file containing URLs (one per line)")
-    parser.add_argument("test_mode", nargs="?", default="mock",
-                       help="Test mode: mock, deterministic, element_scan (default: mock)")
-    parser.add_argument("strategy", nargs="?", default="priority",
-                       help="Strategy: priority, sequential, random, problematic (default: priority)")
     parser.add_argument("max_interactions", nargs="?", type=int, default=3,
                        help="Number of elements to test per page (default: 3)")
 
@@ -561,8 +535,6 @@ Examples:
 
     asyncio.run(run_performance_test(
         urls=urls,
-        test_mode=args.test_mode,
-        strategy=args.strategy,
         max_interactions=args.max_interactions,
         skip_header=not args.include_header
     ))

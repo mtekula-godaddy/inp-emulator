@@ -7,7 +7,7 @@ We use [uv](https://docs.astral.sh/uv/) - the fast Python package manager for op
 ### Prerequisites
 
 - **Python 3.13+**
-- **Chrome/Chromium** browser
+- **Google Chrome** (system install — the tool connects via CDP to avoid bot detection)
 
 ### One-Command Setup
 
@@ -112,17 +112,17 @@ mkdir -p data/results data/screenshots data/traces logs
 ## 🧪 Verify Installation
 
 ```bash
-# Element scan mode - Tests discovered elements (default: 3 per page, excludes nav/footer/share)
-inp-emulator-test https://httpbin.org/html element_scan priority
+# Test discovered elements (default: 3 per page, excludes nav/footer/share)
+inp-emulator-test https://httpbin.org/html
 
 # Test more elements
-inp-emulator-test https://httpbin.org/html element_scan priority 5
+inp-emulator-test https://httpbin.org/html 5
 
 # Include header/nav elements (default: excluded)
-inp-emulator-test https://httpbin.org/html element_scan priority --include-header
+inp-emulator-test https://httpbin.org/html --include-header
 
 # Test multiple URLs from a file
-inp-emulator-test urls.txt element_scan priority
+inp-emulator-test urls.txt
 ```
 
 ## 🔧 Development Setup
@@ -308,8 +308,8 @@ inp-emulator                    # Main CLI command
 inp-emulator-test              # Test runner CLI
 
 # Usage examples
-inp-emulator -u https://example.com --test-mode mock
-inp-emulator-test https://example.com priority
+inp-emulator -u https://example.com
+inp-emulator-test https://example.com
 ```
 
 ### Development Scripts

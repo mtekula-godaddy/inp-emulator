@@ -50,7 +50,7 @@ Detection methods:
 
 Requirements:
 - Python 3.13+
-- Chrome or Chromium
+- Google Chrome (system install — the tool launches it via CDP to avoid bot detection)
 
 Installation:
 ```bash
@@ -67,29 +67,23 @@ cp .env.example .env
 
 Basic command:
 ```bash
-inp-emulator-test https://example.com element_scan priority
+inp-emulator-test https://example.com
 ```
 
 Test 5 elements instead of default 3:
 ```bash
-inp-emulator-test https://example.com element_scan priority 5
+inp-emulator-test https://example.com 5
 ```
 
 Include navigation/header elements:
 ```bash
-inp-emulator-test https://example.com element_scan priority --include-header
+inp-emulator-test https://example.com --include-header
 ```
 
 Test multiple URLs from a file:
 ```bash
-inp-emulator-test urls.txt element_scan priority
+inp-emulator-test urls.txt
 ```
-
-Selection strategies:
-- `priority` - Tests elements scored most likely to cause INP issues
-- `sequential` - Tests elements in discovery order
-- `random` - Random element selection
-- `problematic` - Focuses on dropdowns, modals, carousels
 
 ## Output
 
@@ -109,7 +103,6 @@ Reports show both measured automation values and estimated real-world INP using 
 Example terminal output:
 ```
 Test Results Summary
-Strategy: priority
 URLs Tested: 1/1
 Total Interactions: 3
 Worst INP: 847ms on 'See Plans and Pricing'
@@ -138,10 +131,11 @@ SCREENSHOT_CAPTURE=true
 
 ## Troubleshooting
 
-Chrome fails to start:
+Chrome not found:
 ```bash
-google-chrome --version
-export CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# The tool auto-detects Chrome on macOS, Linux, and Windows.
+# If it can't find it, set the path explicitly:
+export CHROME_EXECUTABLE_PATH=/path/to/chrome
 ```
 
 Enable debug output:
